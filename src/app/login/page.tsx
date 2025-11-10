@@ -18,10 +18,17 @@ export default function LoginPage() {
     
     // Credenciais de administrador
     if (email === "admin@agresteconectado.com" && password === "Admin@2024") {
-      // Salvar sessão
       localStorage.setItem("isAdmin", "true");
       router.push("/admin");
-    } else {
+    } 
+    // Credenciais do lojista Davi
+    else if (email === "davi@lojadodavi.com" && password === "Davi@2024") {
+      localStorage.setItem("merchantLoggedIn", "true");
+      localStorage.setItem("merchantName", "Davi");
+      localStorage.setItem("merchantEmail", email);
+      router.push("/painel-lojista");
+    } 
+    else {
       setError("Email ou senha incorretos");
     }
   };
@@ -33,7 +40,7 @@ export default function LoginPage() {
           <h1 className="text-3xl font-bold text-[#D4704A] mb-2">
             Agreste Conectado
           </h1>
-          <p className="text-gray-600">Área Administrativa</p>
+          <p className="text-gray-600">Área de Login</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -42,7 +49,7 @@ export default function LoginPage() {
             <Input
               id="email"
               type="email"
-              placeholder="admin@agresteconectado.com"
+              placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -90,12 +97,18 @@ export default function LoginPage() {
           <p className="text-xs text-gray-600 font-semibold mb-2">
             Credenciais de Teste:
           </p>
-          <p className="text-xs text-gray-700">
-            <strong>Email:</strong> admin@agresteconectado.com
-          </p>
-          <p className="text-xs text-gray-700">
-            <strong>Senha:</strong> Admin@2024
-          </p>
+          <div className="space-y-2">
+            <div>
+              <p className="text-xs text-gray-700 font-semibold">Admin:</p>
+              <p className="text-xs text-gray-700">Email: admin@agresteconectado.com</p>
+              <p className="text-xs text-gray-700">Senha: Admin@2024</p>
+            </div>
+            <div className="border-t pt-2">
+              <p className="text-xs text-gray-700 font-semibold">Lojista (Davi):</p>
+              <p className="text-xs text-gray-700">Email: davi@lojadodavi.com</p>
+              <p className="text-xs text-gray-700">Senha: Davi@2024</p>
+            </div>
+          </div>
         </div>
       </Card>
     </div>

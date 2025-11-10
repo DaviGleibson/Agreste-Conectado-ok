@@ -21,36 +21,30 @@ import {
   LogOut,
   Settings,
   CreditCard,
+  Upload,
+  X,
 } from "lucide-react";
+import { ProductStorage, Product } from "@/lib/products-storage";
 
 export default function MerchantDashboard() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: "Camisa Polo Masculina",
-      description: "Camisa polo de alta qualidade, 100% algodão",
-      price: 89.90,
-      image: "https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=200&q=80",
-    },
-    {
-      id: 2,
-      name: "Vestido Floral Feminino",
-      description: "Vestido leve e confortável, perfeito para o verão",
-      price: 129.90,
-      image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=200&q=80",
-    },
-  ]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [merchantId, setMerchantId] = useState("davi");
 
   const [newProduct, setNewProduct] = useState({
     name: "",
     description: "",
     price: "",
-    image: "",
+    stock: "",
+    category: "",
+    images: [] as string[],
   });
+
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   // Estado para configuração do PagBank
   const [pagbankConfig, setPagbankConfig] = useState({
@@ -68,17 +62,28 @@ export default function MerchantDashboard() {
   const [configSaved, setConfigSaved] = useState(false);
 
   useEffect(() => {
-    // Simular autenticação
+    // Verificar autenticação
     const isLoggedIn = localStorage.getItem("merchantLoggedIn");
     if (!isLoggedIn) {
-      // Auto-login para demo
-      localStorage.setItem("merchantLoggedIn", "true");
+      router.push("/login");
+      return;
     }
     setIsAuthenticated(true);
+    
+    // Inicializar produtos padrão se necessário
+    ProductStorage.initDefaultProducts(merchantId);
+    
+    // Carregar produtos do lojista
+    loadProducts();
     
     // Carregar configuração do PagBank
     loadPagBankConfig();
   }, []);
+
+  const loadProducts = () => {
+    const merchantProducts = ProductStorage.getByMerchant(merchantId);
+    setProducts(merchantProducts);
+  };
 
   const loadPagBankConfig = async () => {
     try {
@@ -117,25 +122,94 @@ export default function MerchantDashboard() {
     }
   };
 
-  const handleAddProduct = () => {
-    if (newProduct.name && newProduct.price) {
-      setProducts([
-        ...products,
-        {
-          id: Date.now(),
-          name: newProduct.name,
-          description: newProduct.description,
-          price: parseFloat(newProduct.price),
-          image: newProduct.image || "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=200&q=80",
-        },
-      ]);
-      setNewProduct({ name: "", description: "", price: "", image: "" });
-      setShowAddProduct(false);
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const currentImages = editingProduct ? editingProduct.images : newProduct.images;
+    
+    if (currentImages.length >= 3) {
+      alert('Máximo de 3 imagens por produto');
+      return;
+    }
+
+    Array.from(files).slice(0, 3 - currentImages.length).forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        if (editingProduct) {
+          const newImages = [...editingProduct.images, result];
+          setEditingProduct({ ...editingProduct, images: newImages });
+          setImagePreviews(newImages);
+        } else {
+          const newImages = [...newProduct.images, result];
+          setNewProduct({ ...newProduct, images: newImages });
+          setImagePreviews(newImages);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    if (editingProduct) {
+      const newImages = editingProduct.images.filter((_, i) => i !== index);
+      setEditingProduct({ ...editingProduct, images: newImages });
+      setImagePreviews(newImages);
+    } else {
+      const newImages = newProduct.images.filter((_, i) => i !== index);
+      setNewProduct({ ...newProduct, images: newImages });
+      setImagePreviews(newImages);
     }
   };
 
+  const handleAddProduct = () => {
+    if (newProduct.name && newProduct.price) {
+      const product = ProductStorage.add({
+        merchantId,
+        name: newProduct.name,
+        description: newProduct.description,
+        price: parseFloat(newProduct.price),
+        stock: parseInt(newProduct.stock) || 0,
+        category: newProduct.category,
+        images: newProduct.images.length > 0 ? newProduct.images : ["https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400&q=80"],
+      });
+      
+      loadProducts();
+      setNewProduct({ name: "", description: "", price: "", stock: "", category: "", images: [] });
+      setImagePreviews([]);
+      setShowAddProduct(false);
+      alert('Produto adicionado com sucesso!');
+    }
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setImagePreviews(product.images);
+    setShowAddProduct(false);
+  };
+
+  const handleUpdateProduct = () => {
+    if (editingProduct) {
+      ProductStorage.update(editingProduct.id, editingProduct);
+      loadProducts();
+      setEditingProduct(null);
+      setImagePreviews([]);
+      alert('Produto atualizado com sucesso!');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingProduct(null);
+    setImagePreviews([]);
+  };
+
   const handleDeleteProduct = (id: number) => {
-    setProducts(products.filter((p) => p.id !== id));
+    if (confirm('Tem certeza que deseja excluir este produto?')) {
+      ProductStorage.delete(id);
+      loadProducts();
+      alert('Produto excluído com sucesso!');
+    }
   };
 
   const handleLogout = () => {
@@ -246,7 +320,10 @@ export default function MerchantDashboard() {
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">Meus Produtos</h2>
                   <Button
-                    onClick={() => setShowAddProduct(!showAddProduct)}
+                    onClick={() => {
+                      setShowAddProduct(!showAddProduct);
+                      setEditingProduct(null);
+                    }}
                     className="bg-[#D4704A] hover:bg-[#c05f3d] text-white"
                   >
                     <Plus size={18} className="mr-2" />
@@ -254,6 +331,7 @@ export default function MerchantDashboard() {
                   </Button>
                 </div>
 
+                {/* Add Product Form */}
                 {showAddProduct && (
                   <Card className="p-6 bg-white mb-6">
                     <h3 className="text-lg font-bold text-gray-900 mb-4">
@@ -261,7 +339,7 @@ export default function MerchantDashboard() {
                     </h3>
                     <div className="space-y-4">
                       <div>
-                        <Label>Nome do Produto</Label>
+                        <Label>Nome do Produto *</Label>
                         <Input
                           value={newProduct.name}
                           onChange={(e) =>
@@ -278,31 +356,89 @@ export default function MerchantDashboard() {
                             setNewProduct({ ...newProduct, description: e.target.value })
                           }
                           placeholder="Descreva o produto..."
+                          rows={3}
                         />
+                      </div>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <Label>Preço (R$) *</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={newProduct.price}
+                            onChange={(e) =>
+                              setNewProduct({ ...newProduct, price: e.target.value })
+                            }
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <div>
+                          <Label>Estoque *</Label>
+                          <Input
+                            type="number"
+                            value={newProduct.stock}
+                            onChange={(e) =>
+                              setNewProduct({ ...newProduct, stock: e.target.value })
+                            }
+                            placeholder="0"
+                          />
+                        </div>
+                        <div>
+                          <Label>Categoria</Label>
+                          <Input
+                            value={newProduct.category}
+                            onChange={(e) =>
+                              setNewProduct({ ...newProduct, category: e.target.value })
+                            }
+                            placeholder="Ex: Masculino"
+                          />
+                        </div>
                       </div>
                       <div>
-                        <Label>Preço (R$)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={newProduct.price}
-                          onChange={(e) =>
-                            setNewProduct({ ...newProduct, price: e.target.value })
-                          }
-                          placeholder="0.00"
-                        />
+                        <Label>Imagens do Produto (até 3)</Label>
+                        <div className="mt-2 space-y-3">
+                          {imagePreviews.length < 3 && (
+                            <label className="block">
+                              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-[#D4704A] transition-colors">
+                                <Upload className="mx-auto mb-2 text-gray-400" size={24} />
+                                <p className="text-sm text-gray-600">
+                                  Clique para fazer upload ({imagePreviews.length}/3)
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  PNG, JPG até 5MB
+                                </p>
+                              </div>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleImageChange}
+                                className="hidden"
+                              />
+                            </label>
+                          )}
+                          {imagePreviews.length > 0 && (
+                            <div className="grid grid-cols-3 gap-3">
+                              {imagePreviews.map((img, index) => (
+                                <div key={index} className="relative">
+                                  <img
+                                    src={img}
+                                    alt={`Preview ${index + 1}`}
+                                    className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
+                                  />
+                                  <button
+                                    onClick={() => removeImage(index)}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <Label>URL da Imagem</Label>
-                        <Input
-                          value={newProduct.image}
-                          onChange={(e) =>
-                            setNewProduct({ ...newProduct, image: e.target.value })
-                          }
-                          placeholder="https://..."
-                        />
-                      </div>
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 pt-2">
                         <Button
                           onClick={handleAddProduct}
                           className="bg-[#8B9D83] hover:bg-[#7a8a74] text-white"
@@ -310,7 +446,11 @@ export default function MerchantDashboard() {
                           Salvar Produto
                         </Button>
                         <Button
-                          onClick={() => setShowAddProduct(false)}
+                          onClick={() => {
+                            setShowAddProduct(false);
+                            setImagePreviews([]);
+                            setNewProduct({ name: "", description: "", price: "", stock: "", category: "", images: [] });
+                          }}
                           variant="outline"
                         >
                           Cancelar
@@ -320,26 +460,171 @@ export default function MerchantDashboard() {
                   </Card>
                 )}
 
+                {/* Edit Product Form */}
+                {editingProduct && (
+                  <Card className="p-6 bg-white mb-6 border-2 border-[#E8C468]">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                      Editar Produto
+                    </h3>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Nome do Produto *</Label>
+                        <Input
+                          value={editingProduct.name}
+                          onChange={(e) =>
+                            setEditingProduct({ ...editingProduct, name: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label>Descrição</Label>
+                        <Textarea
+                          value={editingProduct.description}
+                          onChange={(e) =>
+                            setEditingProduct({ ...editingProduct, description: e.target.value })
+                          }
+                          rows={3}
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <Label>Preço (R$) *</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={editingProduct.price}
+                            onChange={(e) =>
+                              setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label>Estoque *</Label>
+                          <Input
+                            type="number"
+                            value={editingProduct.stock}
+                            onChange={(e) =>
+                              setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value) })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label>Categoria</Label>
+                          <Input
+                            value={editingProduct.category || ""}
+                            onChange={(e) =>
+                              setEditingProduct({ ...editingProduct, category: e.target.value })
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Imagens do Produto (até 3)</Label>
+                        <div className="mt-2 space-y-3">
+                          {imagePreviews.length < 3 && (
+                            <label className="block">
+                              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-[#D4704A] transition-colors">
+                                <Upload className="mx-auto mb-2 text-gray-400" size={24} />
+                                <p className="text-sm text-gray-600">
+                                  Adicionar mais imagens ({imagePreviews.length}/3)
+                                </p>
+                              </div>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleImageChange}
+                                className="hidden"
+                              />
+                            </label>
+                          )}
+                          {imagePreviews.length > 0 && (
+                            <div className="grid grid-cols-3 gap-3">
+                              {imagePreviews.map((img, index) => (
+                                <div key={index} className="relative">
+                                  <img
+                                    src={img}
+                                    alt={`Preview ${index + 1}`}
+                                    className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
+                                  />
+                                  <button
+                                    onClick={() => removeImage(index)}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-3 pt-2">
+                        <Button
+                          onClick={handleUpdateProduct}
+                          className="bg-[#8B9D83] hover:bg-[#7a8a74] text-white"
+                        >
+                          Atualizar Produto
+                        </Button>
+                        <Button
+                          onClick={handleCancelEdit}
+                          variant="outline"
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
+                {/* Products List */}
                 <div className="space-y-4">
                   {products.map((product) => (
                     <Card key={product.id} className="p-4 bg-white">
                       <div className="flex gap-4">
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="w-20 h-20 object-cover rounded-lg"
-                        />
+                        <div className="flex gap-2">
+                          {product.images.slice(0, 2).map((img, idx) => (
+                            <img
+                              key={idx}
+                              src={img}
+                              alt={product.name}
+                              className="w-20 h-20 object-cover rounded-lg"
+                            />
+                          ))}
+                          {product.images.length > 2 && (
+                            <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 text-sm font-semibold">
+                              +{product.images.length - 2}
+                            </div>
+                          )}
+                        </div>
                         <div className="flex-1">
                           <h3 className="font-bold text-gray-900">{product.name}</h3>
-                          <p className="text-sm text-gray-600 line-clamp-1">
+                          <p className="text-sm text-gray-600 line-clamp-2">
                             {product.description}
                           </p>
-                          <p className="text-lg font-bold text-[#D4704A] mt-1">
-                            R$ {product.price.toFixed(2)}
-                          </p>
+                          <div className="flex items-center gap-4 mt-2">
+                            <p className="text-lg font-bold text-[#D4704A]">
+                              R$ {product.price.toFixed(2)}
+                            </p>
+                            <p className={`text-sm font-medium ${
+                              product.stock > 10 ? 'text-green-600' : 
+                              product.stock > 0 ? 'text-yellow-600' : 'text-red-600'
+                            }`}>
+                              Estoque: {product.stock}
+                            </p>
+                            {product.category && (
+                              <span className="text-xs bg-[#8B9D83]/10 text-[#8B9D83] px-2 py-1 rounded">
+                                {product.category}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="flex gap-2">
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleEditProduct(product)}
+                          >
                             <Edit size={16} />
                           </Button>
                           <Button
