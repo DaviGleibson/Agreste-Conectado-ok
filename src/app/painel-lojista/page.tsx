@@ -23,8 +23,11 @@ import {
   CreditCard,
   Upload,
   X,
+  Image as ImageIcon,
+  Scissors,
 } from "lucide-react";
 import { ProductStorage, Product } from "@/lib/products-storage";
+import { ImageCropper } from "@/components/ImageCropper";
 
 export default function MerchantDashboard() {
   const router = useRouter();
@@ -61,6 +64,16 @@ export default function MerchantDashboard() {
 
   const [configSaved, setConfigSaved] = useState(false);
 
+  // Estado para aparência da loja
+  const [storeAppearance, setStoreAppearance] = useState({
+    banner: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&q=80",
+    logo: "",
+  });
+
+  // Estados para o cropper
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [cropType, setCropType] = useState<"banner" | "logo" | null>(null);
+
   useEffect(() => {
     // Verificar autenticação
     const isLoggedIn = localStorage.getItem("merchantLoggedIn");
@@ -78,7 +91,22 @@ export default function MerchantDashboard() {
     
     // Carregar configuração do PagBank
     loadPagBankConfig();
+    
+    // Carregar aparência da loja
+    loadStoreAppearance();
   }, []);
+
+  const loadStoreAppearance = () => {
+    const saved = localStorage.getItem(`storeAppearance_${merchantId}`);
+    if (saved) {
+      setStoreAppearance(JSON.parse(saved));
+    }
+  };
+
+  const saveStoreAppearance = () => {
+    localStorage.setItem(`storeAppearance_${merchantId}`, JSON.stringify(storeAppearance));
+    alert("Aparência da loja salva com sucesso!");
+  };
 
   const loadProducts = () => {
     const merchantProducts = ProductStorage.getByMerchant(merchantId);
@@ -217,6 +245,49 @@ export default function MerchantDashboard() {
     router.push("/");
   };
 
+  // Funções para upload e corte de imagens
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "banner" | "logo") => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Verificar se é uma imagem
+    if (!file.type.startsWith("image/")) {
+      alert("Por favor, selecione um arquivo de imagem.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const imageUrl = reader.result as string;
+      setImageToCrop(imageUrl);
+      setCropType(type);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = (croppedImage: string) => {
+    if (cropType === "banner") {
+      setStoreAppearance({ ...storeAppearance, banner: croppedImage });
+    } else if (cropType === "logo") {
+      setStoreAppearance({ ...storeAppearance, logo: croppedImage });
+    }
+    setImageToCrop(null);
+    setCropType(null);
+  };
+
+  const handleCancelCrop = () => {
+    setImageToCrop(null);
+    setCropType(null);
+  };
+
+  const removeImage = (type: "banner" | "logo") => {
+    if (type === "banner") {
+      setStoreAppearance({ ...storeAppearance, banner: "" });
+    } else {
+      setStoreAppearance({ ...storeAppearance, logo: "" });
+    }
+  };
+
   if (!isAuthenticated) {
     return null;
   }
@@ -289,6 +360,10 @@ export default function MerchantDashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-8">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="aparencia">
+              <ImageIcon size={16} className="mr-2" />
+              Aparência
+            </TabsTrigger>
             <TabsTrigger value="pagamentos">
               <CreditCard size={16} className="mr-2" />
               Pagamentos
@@ -680,6 +755,188 @@ export default function MerchantDashboard() {
             </div>
           </TabsContent>
 
+          <TabsContent value="aparencia">
+            <Card className="p-6 bg-white">
+              <div className="flex items-center gap-3 mb-6">
+                <ImageIcon size={24} className="text-[#D4704A]" />
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Aparência da Loja</h2>
+                  <p className="text-sm text-gray-600">Personalize o visual da sua loja com banner e logo</p>
+                </div>
+              </div>
+
+              <div className="space-y-8">
+                {/* Banner */}
+                <div>
+                  <Label className="text-base font-semibold mb-2 block">
+                    Banner da Loja
+                  </Label>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Imagem que aparece no topo da sua loja (recomendado: 1200x400px)
+                  </p>
+                  
+                  {storeAppearance.banner ? (
+                    <div className="relative mb-4">
+                      <div className="relative w-full h-64 rounded-lg overflow-hidden border-2 border-gray-200">
+                        <img
+                          src={storeAppearance.banner}
+                          alt="Banner da loja"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setImageToCrop(storeAppearance.banner);
+                            setCropType("banner");
+                          }}
+                          className="border-[#D4704A] text-[#D4704A] hover:bg-[#D4704A] hover:text-white"
+                        >
+                          <Scissors size={16} className="mr-2" />
+                          Cortar Imagem
+                        </Button>
+                        <label className="cursor-pointer">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="border-[#8B9D83] text-[#8B9D83] hover:bg-[#8B9D83] hover:text-white"
+                          >
+                            <Upload size={16} className="mr-2" />
+                            Trocar Imagem
+                          </Button>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload(e, "banner")}
+                            className="hidden"
+                          />
+                        </label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => removeImage("banner")}
+                          className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                        >
+                          <X size={16} className="mr-2" />
+                          Remover
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="block cursor-pointer">
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#D4704A] transition-colors">
+                        <Upload className="mx-auto mb-2 text-gray-400" size={32} />
+                        <p className="text-sm text-gray-600 font-medium">
+                          Clique para fazer upload do banner
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Qualquer formato de imagem
+                        </p>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, "banner")}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+
+                {/* Logo */}
+                <div>
+                  <Label className="text-base font-semibold mb-2 block">
+                    Logo da Loja (Opcional)
+                  </Label>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Logo que aparece na sua loja (recomendado: formato quadrado, mínimo 200x200px)
+                  </p>
+                  
+                  {storeAppearance.logo ? (
+                    <div className="relative mb-4">
+                      <div className="relative w-48 h-48 rounded-lg overflow-hidden border-2 border-gray-200">
+                        <img
+                          src={storeAppearance.logo}
+                          alt="Logo da loja"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setImageToCrop(storeAppearance.logo);
+                            setCropType("logo");
+                          }}
+                          className="border-[#D4704A] text-[#D4704A] hover:bg-[#D4704A] hover:text-white"
+                        >
+                          <Scissors size={16} className="mr-2" />
+                          Cortar Imagem
+                        </Button>
+                        <label className="cursor-pointer">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="border-[#8B9D83] text-[#8B9D83] hover:bg-[#8B9D83] hover:text-white"
+                          >
+                            <Upload size={16} className="mr-2" />
+                            Trocar Imagem
+                          </Button>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload(e, "logo")}
+                            className="hidden"
+                          />
+                        </label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => removeImage("logo")}
+                          className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                        >
+                          <X size={16} className="mr-2" />
+                          Remover
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="block cursor-pointer">
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#D4704A] transition-colors max-w-md">
+                        <Upload className="mx-auto mb-2 text-gray-400" size={32} />
+                        <p className="text-sm text-gray-600 font-medium">
+                          Clique para fazer upload do logo
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Qualquer formato de imagem
+                        </p>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, "logo")}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button
+                    onClick={saveStoreAppearance}
+                    className="bg-[#D4704A] hover:bg-[#c05f3d] text-white"
+                  >
+                    <ImageIcon size={18} className="mr-2" />
+                    Salvar Aparência
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="pagamentos">
             <Card className="p-6 bg-white">
               <div className="flex items-center gap-3 mb-6">
@@ -860,6 +1117,16 @@ export default function MerchantDashboard() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Image Cropper Modal */}
+      {imageToCrop && cropType && (
+        <ImageCropper
+          image={imageToCrop}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCancelCrop}
+          aspectRatio={cropType === "banner" ? 16 / 9 : 1}
+        />
+      )}
     </div>
   );
 }
