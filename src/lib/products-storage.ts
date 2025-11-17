@@ -11,7 +11,16 @@ export interface Product {
   merchantId: string;
 }
 
+export interface StoreAppearance {
+  storeName: string;
+  storeDescription: string;
+  bannerImage: string;
+  primaryColor: string;
+  merchantId: string;
+}
+
 const STORAGE_KEY = 'agreste_products';
+const APPEARANCE_KEY = 'agreste_store_appearance';
 
 export const ProductStorage = {
   // Buscar todos os produtos
@@ -81,5 +90,47 @@ export const ProductStorage = {
 
       defaultProducts.forEach(p => this.add(p));
     }
+  }
+};
+
+export const AppearanceStorage = {
+  // Buscar aparência da loja
+  get(merchantId: string): StoreAppearance {
+    if (typeof window === 'undefined') {
+      return {
+        storeName: "Loja do Davi",
+        storeDescription: "Moda masculina e feminina direto do Parque das Feiras",
+        bannerImage: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&q=80",
+        primaryColor: "#D4704A",
+        merchantId
+      };
+    }
+    
+    const data = localStorage.getItem(APPEARANCE_KEY);
+    const allAppearances: StoreAppearance[] = data ? JSON.parse(data) : [];
+    const appearance = allAppearances.find(a => a.merchantId === merchantId);
+    
+    return appearance || {
+      storeName: "Loja do Davi",
+      storeDescription: "Moda masculina e feminina direto do Parque das Feiras",
+      bannerImage: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&q=80",
+      primaryColor: "#D4704A",
+      merchantId
+    };
+  },
+
+  // Salvar aparência da loja
+  save(appearance: StoreAppearance): void {
+    const data = localStorage.getItem(APPEARANCE_KEY);
+    const allAppearances: StoreAppearance[] = data ? JSON.parse(data) : [];
+    
+    const index = allAppearances.findIndex(a => a.merchantId === appearance.merchantId);
+    if (index !== -1) {
+      allAppearances[index] = appearance;
+    } else {
+      allAppearances.push(appearance);
+    }
+    
+    localStorage.setItem(APPEARANCE_KEY, JSON.stringify(allAppearances));
   }
 };

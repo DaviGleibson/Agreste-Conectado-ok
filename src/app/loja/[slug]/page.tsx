@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ShoppingCart, Search, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
-import { ProductStorage, Product } from "@/lib/products-storage";
+import { ProductStorage, Product, AppearanceStorage, StoreAppearance } from "@/lib/products-storage";
 
 export default function StorePage() {
   const params = useParams();
@@ -17,19 +17,23 @@ export default function StorePage() {
   const [cart, setCart] = useState<any[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<{[key: number]: number}>({});
+  const [appearance, setAppearance] = useState<StoreAppearance>({
+    storeName: "Loja do Davi",
+    storeDescription: "Moda masculina e feminina direto do Parque das Feiras",
+    bannerImage: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&q=80",
+    primaryColor: "#D4704A",
+    merchantId: slug
+  });
 
   useEffect(() => {
     // Carregar produtos do lojista
     const merchantProducts = ProductStorage.getByMerchant(slug);
     setProducts(merchantProducts);
-  }, [slug]);
 
-  const store = {
-    name: "Loja do Davi",
-    owner: "Davi Silva",
-    description: "Moda masculina e feminina direto do Parque das Feiras",
-    banner: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&q=80",
-  };
+    // Carregar aparência da loja
+    const storeAppearance = AppearanceStorage.get(slug);
+    setAppearance(storeAppearance);
+  }, [slug]);
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -79,7 +83,8 @@ export default function StorePage() {
             </Button>
             <Button
               onClick={() => router.push(`/loja/${slug}/carrinho`)}
-              className="bg-[#D4704A] hover:bg-[#c05f3d] text-white relative"
+              className="text-white relative hover:opacity-90"
+              style={{ backgroundColor: appearance.primaryColor }}
             >
               <ShoppingCart size={20} className="mr-2" />
               Carrinho
@@ -96,15 +101,15 @@ export default function StorePage() {
       {/* Banner */}
       <div className="relative h-64 md:h-80 overflow-hidden">
         <img
-          src={store.banner}
-          alt={store.name}
+          src={appearance.bannerImage}
+          alt={appearance.storeName}
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
         <div className="absolute bottom-0 left-0 right-0 p-8">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-4xl font-bold text-white mb-2">{store.name}</h1>
-            <p className="text-white/90 text-lg">{store.description}</p>
+            <h1 className="text-4xl font-bold text-white mb-2">{appearance.storeName}</h1>
+            <p className="text-white/90 text-lg">{appearance.storeDescription}</p>
           </div>
         </div>
       </div>
@@ -175,7 +180,13 @@ export default function StorePage() {
                 </div>
                 <div className="p-4">
                   {product.category && (
-                    <span className="text-xs font-semibold text-[#8B9D83] bg-[#8B9D83]/10 px-2 py-1 rounded">
+                    <span 
+                      className="text-xs font-semibold px-2 py-1 rounded"
+                      style={{ 
+                        backgroundColor: `${appearance.primaryColor}15`,
+                        color: appearance.primaryColor
+                      }}
+                    >
                       {product.category}
                     </span>
                   )}
@@ -187,7 +198,10 @@ export default function StorePage() {
                   </p>
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-2xl font-bold text-[#D4704A]">
+                      <span 
+                        className="text-2xl font-bold"
+                        style={{ color: appearance.primaryColor }}
+                      >
                         R$ {product.price.toFixed(2)}
                       </span>
                       <p className={`text-xs mt-1 ${
@@ -200,7 +214,8 @@ export default function StorePage() {
                     <Button
                       onClick={() => addToCart(product)}
                       disabled={product.stock === 0}
-                      className="bg-[#D4704A] hover:bg-[#c05f3d] text-white disabled:opacity-50"
+                      className="text-white disabled:opacity-50 hover:opacity-90"
+                      style={{ backgroundColor: appearance.primaryColor }}
                     >
                       Adicionar
                     </Button>

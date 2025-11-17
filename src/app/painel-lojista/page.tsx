@@ -23,8 +23,9 @@ import {
   CreditCard,
   Upload,
   X,
+  Palette,
 } from "lucide-react";
-import { ProductStorage, Product } from "@/lib/products-storage";
+import { ProductStorage, Product, AppearanceStorage, StoreAppearance } from "@/lib/products-storage";
 
 export default function MerchantDashboard() {
   const router = useRouter();
@@ -45,6 +46,17 @@ export default function MerchantDashboard() {
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
+  // Estado para aparência da loja
+  const [appearance, setAppearance] = useState<StoreAppearance>({
+    storeName: "Loja do Davi",
+    storeDescription: "Moda masculina e feminina direto do Parque das Feiras",
+    bannerImage: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&q=80",
+    primaryColor: "#D4704A",
+    merchantId: "davi"
+  });
+
+  const [bannerPreview, setBannerPreview] = useState("");
 
   // Estado para configuração do PagBank
   const [pagbankConfig, setPagbankConfig] = useState({
@@ -76,6 +88,9 @@ export default function MerchantDashboard() {
     // Carregar produtos do lojista
     loadProducts();
     
+    // Carregar aparência da loja
+    loadAppearance();
+    
     // Carregar configuração do PagBank
     loadPagBankConfig();
   }, []);
@@ -83,6 +98,38 @@ export default function MerchantDashboard() {
   const loadProducts = () => {
     const merchantProducts = ProductStorage.getByMerchant(merchantId);
     setProducts(merchantProducts);
+  };
+
+  const loadAppearance = () => {
+    const storeAppearance = AppearanceStorage.get(merchantId);
+    setAppearance(storeAppearance);
+    setBannerPreview(storeAppearance.bannerImage);
+  };
+
+  const handleSaveAppearance = () => {
+    AppearanceStorage.save(appearance);
+    alert('Aparência da loja salva com sucesso!');
+  };
+
+  const handleBannerImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Avisar que é melhor usar URL
+      alert('Para melhor desempenho, recomendamos usar uma URL de imagem hospedada online (ex: Imgur, Unsplash). Imagens muito grandes podem causar problemas de armazenamento.');
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        // Verificar tamanho
+        if (result.length > 500000) { // ~500KB
+          alert('Imagem muito grande! Use uma URL de imagem online ou uma imagem menor.');
+          return;
+        }
+        setBannerPreview(result);
+        setAppearance({ ...appearance, bannerImage: result });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const loadPagBankConfig = async () => {
@@ -133,10 +180,18 @@ export default function MerchantDashboard() {
       return;
     }
 
+    // Avisar sobre URLs
+    alert('Para melhor desempenho, recomendamos usar URLs de imagens hospedadas online. Imagens muito grandes podem causar problemas de armazenamento.');
+
     Array.from(files).slice(0, 3 - currentImages.length).forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
+        // Verificar tamanho
+        if (result.length > 300000) { // ~300KB
+          alert('Imagem muito grande! Use uma URL de imagem online ou uma imagem menor.');
+          return;
+        }
         if (editingProduct) {
           const newImages = [...editingProduct.images, result];
           setEditingProduct({ ...editingProduct, images: newImages });
@@ -226,7 +281,7 @@ export default function MerchantDashboard() {
       title: "Produtos",
       value: products.length,
       icon: Package,
-      color: "#D4704A",
+      color: appearance.primaryColor,
     },
     {
       title: "Pedidos Hoje",
@@ -244,7 +299,7 @@ export default function MerchantDashboard() {
       title: "Crescimento",
       value: "+23%",
       icon: TrendingUp,
-      color: "#D4704A",
+      color: appearance.primaryColor,
     },
   ];
 
@@ -261,7 +316,9 @@ export default function MerchantDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-[#D4704A]">Loja do Davi</h1>
+              <h1 className="text-2xl font-bold" style={{ color: appearance.primaryColor }}>
+                {appearance.storeName}
+              </h1>
               <p className="text-sm text-gray-600">Painel do Lojista</p>
             </div>
             <div className="flex gap-3">
@@ -273,9 +330,15 @@ export default function MerchantDashboard() {
                 Ver Minha Loja
               </Button>
               <Button
-                onClick={handleLogout}
+                onClick={() => {
+                  localStorage.removeItem("merchantLoggedIn");
+                  router.push("/");
+                }}
                 variant="outline"
-                className="border-[#D4704A] text-[#D4704A] hover:bg-[#D4704A] hover:text-white"
+                style={{ borderColor: appearance.primaryColor, color: appearance.primaryColor }}
+                className="hover:text-white"
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = appearance.primaryColor}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 <LogOut size={18} className="mr-2" />
                 Sair
@@ -289,6 +352,10 @@ export default function MerchantDashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-8">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="aparencia">
+              <Palette size={16} className="mr-2" />
+              Aparência
+            </TabsTrigger>
             <TabsTrigger value="pagamentos">
               <CreditCard size={16} className="mr-2" />
               Pagamentos
@@ -678,6 +745,187 @@ export default function MerchantDashboard() {
                 </Card>
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="aparencia">
+            <Card className="p-6 bg-white">
+              <div className="flex items-center gap-3 mb-6">
+                <Palette size={24} style={{ color: appearance.primaryColor }} />
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Aparência da Loja</h2>
+                  <p className="text-sm text-gray-600">Personalize a aparência da sua loja online</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <Label htmlFor="storeName" className="text-base font-semibold">
+                    Nome da Loja *
+                  </Label>
+                  <p className="text-sm text-gray-600 mb-2">
+                    Nome que aparecerá no topo da sua loja
+                  </p>
+                  <Input
+                    id="storeName"
+                    value={appearance.storeName}
+                    onChange={(e) => setAppearance({ ...appearance, storeName: e.target.value })}
+                    placeholder="Ex: Loja do Davi"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="storeDescription" className="text-base font-semibold">
+                    Descrição da Loja *
+                  </Label>
+                  <p className="text-sm text-gray-600 mb-2">
+                    Breve descrição que aparecerá abaixo do nome
+                  </p>
+                  <Textarea
+                    id="storeDescription"
+                    value={appearance.storeDescription}
+                    onChange={(e) => setAppearance({ ...appearance, storeDescription: e.target.value })}
+                    placeholder="Ex: Moda masculina e feminina direto do Parque das Feiras"
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="primaryColor" className="text-base font-semibold">
+                    Cor Principal dos Botões *
+                  </Label>
+                  <p className="text-sm text-gray-600 mb-2">
+                    Escolha a cor que representa sua marca
+                  </p>
+                  <div className="flex gap-3 items-center">
+                    <Input
+                      id="primaryColor"
+                      type="color"
+                      value={appearance.primaryColor}
+                      onChange={(e) => setAppearance({ ...appearance, primaryColor: e.target.value })}
+                      className="w-20 h-12 cursor-pointer"
+                    />
+                    <Input
+                      type="text"
+                      value={appearance.primaryColor}
+                      onChange={(e) => setAppearance({ ...appearance, primaryColor: e.target.value })}
+                      placeholder="#D4704A"
+                      className="flex-1"
+                    />
+                    <div 
+                      className="w-12 h-12 rounded-lg border-2 border-gray-300"
+                      style={{ backgroundColor: appearance.primaryColor }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-base font-semibold">
+                    Imagem de Banner *
+                  </Label>
+                  <p className="text-sm text-gray-600 mb-2">
+                    Imagem de fundo que aparecerá no topo da sua loja (recomendado: 1200x400px)
+                  </p>
+                  <div className="space-y-3">
+                    <div>
+                      <Label>Cole a URL da imagem (recomendado):</Label>
+                      <Input
+                        value={appearance.bannerImage}
+                        onChange={(e) => {
+                          setAppearance({ ...appearance, bannerImage: e.target.value });
+                          setBannerPreview(e.target.value);
+                        }}
+                        placeholder="https://images.unsplash.com/photo-..."
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        💡 Use serviços como Unsplash, Imgur ou hospede sua imagem online
+                      </p>
+                    </div>
+
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-white px-2 text-gray-500">Ou</span>
+                      </div>
+                    </div>
+
+                    <label className="block">
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-[#D4704A] transition-colors">
+                        <Upload className="mx-auto mb-2 text-gray-400" size={32} />
+                        <p className="text-sm text-gray-600">
+                          Upload de imagem pequena (máx. 500KB)
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          ⚠️ Imagens grandes podem causar erros
+                        </p>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBannerImageChange}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {bannerPreview && (
+                      <div className="mt-4">
+                        <p className="text-sm text-gray-600 mb-2">Preview do Banner:</p>
+                        <div className="relative h-48 rounded-lg overflow-hidden border-2 border-gray-200">
+                          <img
+                            src={bannerPreview}
+                            alt="Banner Preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                          <div className="absolute bottom-4 left-4">
+                            <h3 className="text-2xl font-bold text-white">{appearance.storeName}</h3>
+                            <p className="text-white/90">{appearance.storeDescription}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button
+                    onClick={handleSaveAppearance}
+                    style={{ backgroundColor: appearance.primaryColor }}
+                    className="text-white hover:opacity-90"
+                  >
+                    <Settings size={18} className="mr-2" />
+                    Salvar Aparência
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push("/loja/davi")}
+                  >
+                    Visualizar Loja
+                  </Button>
+                </div>
+
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-2">💡 Dicas de Personalização:</h4>
+                  <ul className="space-y-1 text-sm text-blue-800">
+                    <li>• <strong>Use URLs de imagens</strong> hospedadas online (Unsplash, Imgur)</li>
+                    <li>• Evite fazer upload de imagens grandes (use URLs)</li>
+                    <li>• Escolha uma cor que combine com sua marca</li>
+                    <li>• Mantenha o nome da loja curto e memorável</li>
+                  </ul>
+                </div>
+
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <h4 className="font-semibold text-yellow-900 mb-2">⚠️ Importante sobre Imagens:</h4>
+                  <p className="text-sm text-yellow-800">
+                    Para evitar erros de armazenamento, <strong>sempre use URLs de imagens</strong> hospedadas online em vez de fazer upload. 
+                    Serviços recomendados: <a href="https://unsplash.com" target="_blank" className="underline">Unsplash</a>, 
+                    <a href="https://imgur.com" target="_blank" className="underline ml-1">Imgur</a>
+                  </p>
+                </div>
+              </div>
+            </Card>
           </TabsContent>
 
           <TabsContent value="pagamentos">
