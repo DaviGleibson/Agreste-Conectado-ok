@@ -83,7 +83,11 @@ export function ImageCropper({ image, onCropComplete, onCancel, aspectRatio = 16
   };
 
   const handleCrop = async () => {
-    if (!croppedAreaPixels) return;
+    if (!croppedAreaPixels) {
+      // Se não houver área de corte definida, usar a imagem original
+      onCropComplete(image);
+      return;
+    }
 
     try {
       const croppedImage = await getCroppedImg(image, croppedAreaPixels);
@@ -92,6 +96,10 @@ export function ImageCropper({ image, onCropComplete, onCancel, aspectRatio = 16
       console.error("Erro ao cortar imagem:", error);
       alert("Erro ao cortar imagem. Tente novamente.");
     }
+  };
+
+  const handleUseOriginal = () => {
+    onCropComplete(image);
   };
 
   return (
@@ -131,10 +139,13 @@ export function ImageCropper({ image, onCropComplete, onCancel, aspectRatio = 16
             />
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="flex gap-2">
           <Button variant="outline" onClick={onCancel}>
             <X size={16} className="mr-2" />
             Cancelar
+          </Button>
+          <Button variant="outline" onClick={handleUseOriginal} className="border-[#8B9D83] text-[#8B9D83] hover:bg-[#8B9D83] hover:text-white">
+            Usar Original
           </Button>
           <Button onClick={handleCrop} className="bg-[#D4704A] hover:bg-[#c05f3d] text-white">
             Aplicar Corte

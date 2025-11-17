@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -73,6 +73,10 @@ export default function MerchantDashboard() {
   // Estados para o cropper
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [cropType, setCropType] = useState<"banner" | "logo" | null>(null);
+  
+  // Refs para os inputs de arquivo
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Verificar autenticação
@@ -253,16 +257,34 @@ export default function MerchantDashboard() {
     // Verificar se é uma imagem
     if (!file.type.startsWith("image/")) {
       alert("Por favor, selecione um arquivo de imagem.");
+      // Resetar o input
+      e.target.value = "";
       return;
     }
 
     const reader = new FileReader();
     reader.onloadend = () => {
       const imageUrl = reader.result as string;
+      // Abrir o cropper automaticamente
       setImageToCrop(imageUrl);
       setCropType(type);
     };
+    reader.onerror = () => {
+      alert("Erro ao carregar a imagem. Tente novamente.");
+      e.target.value = "";
+    };
     reader.readAsDataURL(file);
+    
+    // Resetar o input para permitir selecionar o mesmo arquivo novamente
+    e.target.value = "";
+  };
+
+  const handleUploadClick = (type: "banner" | "logo") => {
+    if (type === "banner" && bannerInputRef.current) {
+      bannerInputRef.current.click();
+    } else if (type === "logo" && logoInputRef.current) {
+      logoInputRef.current.click();
+    }
   };
 
   const handleCropComplete = (croppedImage: string) => {
@@ -797,22 +819,22 @@ export default function MerchantDashboard() {
                           <Scissors size={16} className="mr-2" />
                           Cortar Imagem
                         </Button>
-                        <label className="cursor-pointer">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="border-[#8B9D83] text-[#8B9D83] hover:bg-[#8B9D83] hover:text-white"
-                          >
-                            <Upload size={16} className="mr-2" />
-                            Trocar Imagem
-                          </Button>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleImageUpload(e, "banner")}
-                            className="hidden"
-                          />
-                        </label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleUploadClick("banner")}
+                          className="border-[#8B9D83] text-[#8B9D83] hover:bg-[#8B9D83] hover:text-white"
+                        >
+                          <Upload size={16} className="mr-2" />
+                          Trocar Imagem
+                        </Button>
+                        <input
+                          ref={bannerInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, "banner")}
+                          className="hidden"
+                        />
                         <Button
                           type="button"
                           variant="outline"
@@ -836,6 +858,7 @@ export default function MerchantDashboard() {
                         </p>
                       </div>
                       <input
+                        ref={bannerInputRef}
                         type="file"
                         accept="image/*"
                         onChange={(e) => handleImageUpload(e, "banner")}
@@ -876,22 +899,22 @@ export default function MerchantDashboard() {
                           <Scissors size={16} className="mr-2" />
                           Cortar Imagem
                         </Button>
-                        <label className="cursor-pointer">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="border-[#8B9D83] text-[#8B9D83] hover:bg-[#8B9D83] hover:text-white"
-                          >
-                            <Upload size={16} className="mr-2" />
-                            Trocar Imagem
-                          </Button>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleImageUpload(e, "logo")}
-                            className="hidden"
-                          />
-                        </label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleUploadClick("logo")}
+                          className="border-[#8B9D83] text-[#8B9D83] hover:bg-[#8B9D83] hover:text-white"
+                        >
+                          <Upload size={16} className="mr-2" />
+                          Trocar Imagem
+                        </Button>
+                        <input
+                          ref={logoInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, "logo")}
+                          className="hidden"
+                        />
                         <Button
                           type="button"
                           variant="outline"
@@ -915,6 +938,7 @@ export default function MerchantDashboard() {
                         </p>
                       </div>
                       <input
+                        ref={logoInputRef}
                         type="file"
                         accept="image/*"
                         onChange={(e) => handleImageUpload(e, "logo")}
