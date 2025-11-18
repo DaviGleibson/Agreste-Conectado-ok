@@ -40,9 +40,15 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
+    "@babel/core": "^7.28.5",
+    "@babel/preset-env": "^7.28.5",
+    "@babel/preset-react": "^7.28.5",
+    "@babel/preset-typescript": "^7.28.5",
+    "@swc/core": "^1.15.2",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "babel-loader": "^10.0.0",
     "postcss": "^8",
     "string-replace-loader": "^3.2.0",
     "tailwind-merge": "^2",
