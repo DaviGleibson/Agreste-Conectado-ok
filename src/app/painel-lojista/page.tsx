@@ -183,7 +183,7 @@ export default function MerchantDashboard() {
     });
   };
 
-  const removeImage = (index: number) => {
+  const removeProductImage = (index: number) => {
     if (editingProduct) {
       const newImages = editingProduct.images.filter((_, i) => i !== index);
       setEditingProduct({ ...editingProduct, images: newImages });
@@ -302,7 +302,7 @@ export default function MerchantDashboard() {
     setCropType(null);
   };
 
-  const removeImage = (type: "banner" | "logo") => {
+  const removeAppearanceImage = (type: "banner" | "logo") => {
     if (type === "banner") {
       setStoreAppearance({ ...storeAppearance, banner: "" });
     } else {
@@ -524,7 +524,7 @@ export default function MerchantDashboard() {
                                     className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
                                   />
                                   <button
-                                    onClick={() => removeImage(index)}
+                                    onClick={() => removeProductImage(index)}
                                     className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                                   >
                                     <X size={14} />
@@ -645,7 +645,7 @@ export default function MerchantDashboard() {
                                     className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
                                   />
                                   <button
-                                    onClick={() => removeImage(index)}
+                                    onClick={() => removeProductImage(index)}
                                     className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                                   >
                                     <X size={14} />
@@ -838,7 +838,7 @@ export default function MerchantDashboard() {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => removeImage("banner")}
+                          onClick={() => removeAppearanceImage("banner")}
                           className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
                         >
                           <X size={16} className="mr-2" />
@@ -918,7 +918,7 @@ export default function MerchantDashboard() {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => removeImage("logo")}
+                          onClick={() => removeAppearanceImage("logo")}
                           className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
                         >
                           <X size={16} className="mr-2" />
