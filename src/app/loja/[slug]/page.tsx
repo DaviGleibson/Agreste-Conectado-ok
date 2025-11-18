@@ -33,7 +33,25 @@ export default function StorePage() {
     buttonTextColor: "#FFFFFF",
   });
 
+  const [isStorePaused, setIsStorePaused] = useState(false);
+
   useEffect(() => {
+    // Verificar se a loja está pausada
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("admin_merchants");
+      if (saved) {
+        try {
+          const merchants = JSON.parse(saved);
+          const merchant = merchants.find((m: any) => m.id === slug);
+          if (merchant && merchant.isPaused) {
+            setIsStorePaused(true);
+          }
+        } catch (error) {
+          console.error("Erro ao verificar status da loja:", error);
+        }
+      }
+    }
+
     // Carregar produtos do lojista
     const merchantProducts = ProductStorage.getByMerchant(slug);
     setProducts(merchantProducts);
@@ -152,6 +170,23 @@ export default function StorePage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Loja Pausada Message */}
+        {isStorePaused && (
+          <Card className="mb-6 border-2 border-gray-300 bg-gray-50">
+            <div className="p-6 text-center">
+              <div className="flex items-center justify-center mb-3">
+                <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
+                  <span className="text-3xl">⏸️</span>
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Loja Pausada</h2>
+              <p className="text-gray-600 mb-4">
+                Esta loja está temporariamente pausada. Entre em contato com o administrador para mais informações.
+              </p>
+            </div>
+          </Card>
+        )}
+
         {/* Search Bar */}
         <div className="mb-8">
           <div className="relative max-w-md">
@@ -167,6 +202,7 @@ export default function StorePage() {
         </div>
 
         {/* Products Grid */}
+        {!isStorePaused && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProducts.map((product) => {
             const currentImageIndex = selectedImageIndex[product.id] || 0;
@@ -273,10 +309,11 @@ export default function StorePage() {
           })}
         </div>
 
-        {filteredProducts.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-600">Nenhum produto encontrado</p>
-          </div>
+          {filteredProducts.length === 0 && !isStorePaused && (
+            <div className="text-center py-12">
+              <p className="text-gray-600">Nenhum produto encontrado</p>
+            </div>
+          )}
         )}
       </main>
     </div>

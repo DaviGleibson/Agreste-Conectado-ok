@@ -10,19 +10,22 @@ export default function PricingSection() {
     "monthly"
   );
 
+  // Features comuns para ambos os planos
+  const commonFeatures = [
+    "Loja online personalizada",
+    "Até 100 produtos",
+    "Painel de controle completo",
+    "Suporte por email",
+    "Integração com redes sociais",
+    "Relatórios básicos",
+  ];
+
   const monthlyPlan = {
     name: "Plano Mensal",
     price: "R$ 40",
     period: "/mês",
     description: "Perfeito para começar",
-    features: [
-      "Loja online personalizada",
-      "Até 100 produtos",
-      "Painel de controle completo",
-      "Suporte por email",
-      "Integração com redes sociais",
-      "Relatórios básicos",
-    ],
+    features: commonFeatures,
     buttonColor: "bg-[#8B9D83] hover:bg-[#7a8a74]",
     checkColor: "bg-[#8B9D83]",
     borderColor: "border-gray-200 hover:border-[#8B9D83]",
@@ -34,16 +37,7 @@ export default function PricingSection() {
     period: "/mês",
     description: "Melhor custo-benefício",
     savings: "Economize até R$ 180/ano",
-    features: [
-      "Tudo do Plano Mensal",
-      "Produtos ilimitados",
-      "Suporte prioritário 24/7",
-      "Domínio personalizado grátis",
-      "Relatórios avançados",
-      "Marketing por email",
-      "Integração com marketplaces",
-      "2 meses grátis",
-    ],
+    features: commonFeatures,
     buttonColor: "bg-[#D4704A] hover:bg-[#c05f3d]",
     checkColor: "bg-[#D4704A]",
     borderColor: "border-2 border-[#D4704A]",

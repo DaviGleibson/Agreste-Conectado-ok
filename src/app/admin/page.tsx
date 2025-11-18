@@ -212,6 +212,13 @@ export default function AdminPage() {
                 <TrendingUp size={18} className="mr-2" />
                 Análise de Crescimento
               </Button>
+              <Button
+                className="w-full justify-start bg-[#D4704A] hover:bg-[#c05f3d] text-white"
+                onClick={() => router.push("/admin/pagamentos")}
+              >
+                <DollarSign size={18} className="mr-2" />
+                Configurar Pagamentos
+              </Button>
             </div>
           </Card>
         </div>

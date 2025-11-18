@@ -22,20 +22,24 @@ import {
   Store,
   Search,
   AlertTriangle,
+  Pause,
+  Play,
 } from "lucide-react";
 
-type MerchantStatus = "ativo" | "pendente" | "inadimplente";
+type MerchantStatus = "ativo" | "pendente" | "inadimplente" | "pausada";
 
 interface Merchant {
   id: string;
   name: string;
   owner: string;
+  email: string;
   plan: string;
   planStatus: "em dia" | "pendente" | "atrasado";
   lastPayment: string;
   status: MerchantStatus;
   storeUrl: string;
   balance: string;
+  isPaused: boolean;
 }
 
 interface PagBankConfig {
@@ -62,50 +66,58 @@ const defaultPagBankConfig: PagBankConfig = {
   sub_merchant_mcc: "5691",
 };
 
-const merchantsData: Merchant[] = [
+const initialMerchantsData: Merchant[] = [
   {
     id: "davi",
     name: "Loja do Davi",
     owner: "Davi Silva",
+    email: "davi@example.com",
     plan: "Plano Premium",
     planStatus: "em dia",
     lastPayment: "10/11/2025",
     status: "ativo",
     storeUrl: "/loja/davi",
     balance: "R$ 12.340,00",
+    isPaused: false,
   },
   {
     id: "maria",
     name: "Boutique da Maria",
     owner: "Maria Santos",
+    email: "maria@example.com",
     plan: "Plano Essencial",
     planStatus: "pendente",
     lastPayment: "02/10/2025",
     status: "pendente",
     storeUrl: "/loja/maria",
     balance: "R$ 4.890,00",
+    isPaused: false,
   },
   {
     id: "joao",
     name: "Tech do João",
     owner: "João Souza",
+    email: "joao@example.com",
     plan: "Plano Starter",
     planStatus: "atrasado",
     lastPayment: "15/08/2025",
     status: "inadimplente",
     storeUrl: "/loja/joao",
     balance: "R$ 1.290,00",
+    isPaused: true,
   },
   {
     id: "ana",
     name: "Studio da Ana",
     owner: "Ana Oliveira",
+    email: "ana@example.com",
     plan: "Plano Premium",
     planStatus: "em dia",
     lastPayment: "05/11/2025",
     status: "ativo",
     storeUrl: "/loja/ana",
     balance: "R$ 8.120,00",
+    isPaused: false,
   },
 ];
 
@@ -114,6 +126,16 @@ export default function AdminStoresPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<MerchantStatus | "todos">("todos");
+  const [merchantsData, setMerchantsData] = useState<Merchant[]>(() => {
+    // Carrega dados do localStorage ou usa os iniciais
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("admin_merchants");
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    }
+    return initialMerchantsData;
+  });
   const [selectedMerchantId, setSelectedMerchantId] = useState<string>(merchantsData[0]?.id ?? "");
   const [pagbankConfig, setPagbankConfig] = useState<PagBankConfig>(defaultPagBankConfig);
   const [configSaved, setConfigSaved] = useState(false);
@@ -129,13 +151,16 @@ export default function AdminStoresPage() {
 
   const filteredMerchants = useMemo(() => {
     return merchantsData.filter((merchant) => {
+      const searchLower = searchTerm.toLowerCase();
       const matchesSearch =
-        merchant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        merchant.owner.toLowerCase().includes(searchTerm.toLowerCase());
+        merchant.name.toLowerCase().includes(searchLower) ||
+        merchant.owner.toLowerCase().includes(searchLower) ||
+        merchant.email.toLowerCase().includes(searchLower) ||
+        merchant.id.toLowerCase().includes(searchLower);
       const matchesStatus = statusFilter === "todos" || merchant.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [searchTerm, statusFilter]);
+  }, [searchTerm, statusFilter, merchantsData]);
 
   const selectedMerchant = useMemo(
     () => merchantsData.find((merchant) => merchant.id === selectedMerchantId) ?? merchantsData[0],
@@ -154,12 +179,35 @@ export default function AdminStoresPage() {
     }
   }, [selectedMerchant]);
 
+  const togglePauseStore = (merchantId: string) => {
+    setMerchantsData((prev) => {
+      const updated = prev.map((merchant) => {
+        if (merchant.id === merchantId) {
+          const newIsPaused = !merchant.isPaused;
+          return {
+            ...merchant,
+            isPaused: newIsPaused,
+            status: newIsPaused ? "pausada" : merchant.planStatus === "atrasado" ? "inadimplente" : merchant.planStatus === "pendente" ? "pendente" : "ativo",
+          };
+        }
+        return merchant;
+      });
+      // Salva no localStorage
+      if (typeof window !== "undefined") {
+        localStorage.setItem("admin_merchants", JSON.stringify(updated));
+      }
+      return updated;
+    });
+  };
+
   const statusBadgeClass = (status: MerchantStatus) => {
     switch (status) {
       case "ativo":
         return "bg-green-100 text-green-700";
       case "pendente":
         return "bg-yellow-100 text-yellow-700";
+      case "pausada":
+        return "bg-gray-100 text-gray-700";
       default:
         return "bg-red-100 text-red-700";
     }
@@ -263,6 +311,7 @@ export default function AdminStoresPage() {
               <SelectItem value="ativo">Ativos</SelectItem>
               <SelectItem value="pendente">Pendentes</SelectItem>
               <SelectItem value="inadimplente">Inadimplentes</SelectItem>
+              <SelectItem value="pausada">Pausadas</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -299,6 +348,8 @@ export default function AdminStoresPage() {
                           ? "Em dia"
                           : merchant.status === "pendente"
                           ? "Pagamento pendente"
+                          : merchant.status === "pausada"
+                          ? "Pausada"
                           : "Inadimplente"}
                       </span>
                       <p className="text-xs text-gray-500">Último pagamento: {merchant.lastPayment}</p>
@@ -315,6 +366,27 @@ export default function AdminStoresPage() {
                       }}
                     >
                       Ver Loja
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className={merchant.isPaused ? "text-green-600 border-green-600" : "text-orange-600 border-orange-600"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        togglePauseStore(merchant.id);
+                      }}
+                    >
+                      {merchant.isPaused ? (
+                        <>
+                          <Play size={14} className="mr-2" />
+                          Despausar Loja
+                        </>
+                      ) : (
+                        <>
+                          <Pause size={14} className="mr-2" />
+                          Pausar Loja
+                        </>
+                      )}
                     </Button>
                     <Button
                       size="sm"
