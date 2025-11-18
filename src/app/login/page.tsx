@@ -28,6 +28,13 @@ export default function LoginPage() {
       localStorage.setItem("merchantEmail", email);
       router.push("/painel-lojista");
     } 
+    // Login de cliente (qualquer outro email/senha válido)
+    else if (email && password && password.length >= 6) {
+      localStorage.setItem("clientLoggedIn", "true");
+      localStorage.setItem("clientEmail", email);
+      localStorage.setItem("clientName", email.split("@")[0]);
+      router.push("/cliente");
+    }
     else {
       setError("Email ou senha incorretos");
     }
@@ -107,6 +114,11 @@ export default function LoginPage() {
               <p className="text-xs text-gray-700 font-semibold">Lojista (Davi):</p>
               <p className="text-xs text-gray-700">Email: davi@lojadodavi.com</p>
               <p className="text-xs text-gray-700">Senha: Davi@2024</p>
+            </div>
+            <div className="border-t pt-2">
+              <p className="text-xs text-gray-700 font-semibold">Cliente:</p>
+              <p className="text-xs text-gray-700">Use qualquer email e senha (mín. 6 caracteres)</p>
+              <p className="text-xs text-gray-700">Ex: cliente@email.com / senha123</p>
             </div>
           </div>
         </div>

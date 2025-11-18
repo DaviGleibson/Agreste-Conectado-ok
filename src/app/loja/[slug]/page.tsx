@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ShoppingCart, Search, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShoppingCart, Search, ArrowLeft, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { ProductStorage, Product } from "@/lib/products-storage";
 
 interface StoreAppearance {
@@ -34,8 +34,28 @@ export default function StorePage() {
   });
 
   const [isStorePaused, setIsStorePaused] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isClientLoggedIn, setIsClientLoggedIn] = useState(false);
 
   useEffect(() => {
+    // Verificar se o cliente está logado
+    const isLoggedIn = localStorage.getItem("clientLoggedIn");
+    setIsClientLoggedIn(isLoggedIn === "true");
+    
+    // Verificar se a loja está favoritada
+    if (isLoggedIn === "true") {
+      const saved = localStorage.getItem("client_favorite_stores");
+      if (saved) {
+        try {
+          const favorites = JSON.parse(saved);
+          const isFav = favorites.some((f: any) => f.slug === slug);
+          setIsFavorite(isFav);
+        } catch (error) {
+          console.error("Erro ao verificar favoritos:", error);
+        }
+      }
+    }
+    
     // Verificar se a loja está pausada
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("admin_merchants");
@@ -55,6 +75,16 @@ export default function StorePage() {
     // Carregar produtos do lojista
     const merchantProducts = ProductStorage.getByMerchant(slug);
     setProducts(merchantProducts);
+    
+    // Carregar carrinho do localStorage
+    const savedCart = localStorage.getItem(`cart_${slug}`);
+    if (savedCart) {
+      try {
+        setCart(JSON.parse(savedCart));
+      } catch (error) {
+        console.error("Erro ao carregar carrinho:", error);
+      }
+    }
     
     // Carregar aparência personalizada da loja
     const saved = localStorage.getItem(`storeAppearance_${slug}`);
@@ -86,15 +116,56 @@ export default function StorePage() {
     product.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const addToCart = (product: Product) => {
-    const existingItem = cart.find(item => item.id === product.id);
-    if (existingItem) {
-      setCart(cart.map(item =>
-        item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-      ));
-    } else {
-      setCart([...cart, { ...product, quantity: 1 }]);
+  const toggleFavorite = () => {
+    if (!isClientLoggedIn) {
+      router.push("/login");
+      return;
     }
+
+    const storeData = {
+      slug: slug,
+      name: "Loja do Davi", // TODO: pegar dinamicamente
+      owner: "Davi Silva", // TODO: pegar dinamicamente
+      image: storeAppearance.banner,
+    };
+
+    const saved = localStorage.getItem("client_favorite_stores");
+    let favorites = saved ? JSON.parse(saved) : [];
+    
+    if (isFavorite) {
+      favorites = favorites.filter((f: any) => f.slug !== slug);
+    } else {
+      favorites.push(storeData);
+    }
+    
+    localStorage.setItem("client_favorite_stores", JSON.stringify(favorites));
+    setIsFavorite(!isFavorite);
+  };
+
+  const addToCart = (product: Product) => {
+    const cartItem = {
+      ...product,
+      quantity: 1,
+      storeSlug: slug,
+      storeName: store.name,
+    };
+    
+    // Carregar carrinho do localStorage
+    const savedCart = localStorage.getItem(`cart_${slug}`);
+    let currentCart = savedCart ? JSON.parse(savedCart) : [];
+    
+    const existingItem = currentCart.find((item: any) => item.id === product.id);
+    if (existingItem) {
+      currentCart = currentCart.map((item: any) =>
+        item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+      );
+    } else {
+      currentCart.push(cartItem);
+    }
+    
+    // Salvar no localStorage
+    localStorage.setItem(`cart_${slug}`, JSON.stringify(currentCart));
+    setCart(currentCart);
   };
 
   const nextImage = (productId: number, totalImages: number) => {
@@ -160,6 +231,17 @@ export default function StorePage() {
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        {isClientLoggedIn && (
+          <button
+            onClick={toggleFavorite}
+            className="absolute top-4 right-4 p-3 bg-white rounded-full shadow-lg hover:bg-gray-50 transition-colors z-10"
+          >
+            <Heart
+              size={24}
+              className={isFavorite ? "text-red-500 fill-red-500" : "text-gray-400"}
+            />
+          </button>
+        )}
         <div className="absolute bottom-0 left-0 right-0 p-8">
           <div className="max-w-7xl mx-auto">
             <h1 className="text-4xl font-bold text-white mb-2">{store.name}</h1>

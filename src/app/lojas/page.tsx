@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Store, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { Search, Store, ArrowLeft, Heart } from "lucide-react";
+import { useState, useEffect } from "react";
 
 const stores = [
   {
@@ -22,6 +22,85 @@ const stores = [
 export default function StoresPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
+  const [favoriteStores, setFavoriteStores] = useState<string[]>([]);
+  const [isClientLoggedIn, setIsClientLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Verificar se o cliente está logado
+    const isLoggedIn = localStorage.getItem("clientLoggedIn");
+    setIsClientLoggedIn(isLoggedIn === "true");
+    
+    // Carregar lojas favoritas
+    if (isLoggedIn === "true") {
+      const saved = localStorage.getItem("client_favorite_stores");
+      if (saved) {
+        try {
+          const favorites = JSON.parse(saved);
+          setFavoriteStores(favorites.map((f: any) => f.slug));
+        } catch (error) {
+          console.error("Erro ao carregar favoritos:", error);
+        }
+      }
+    }
+  }, []);
+
+  const toggleFavorite = (storeSlug: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!isClientLoggedIn) {
+      router.push("/login");
+      return;
+    }
+
+    setFavoriteStores((prev) => {
+      const isFavorite = prev.includes(storeSlug);
+      let updated;
+      
+      if (isFavorite) {
+        updated = prev.filter((slug) => slug !== storeSlug);
+      } else {
+        updated = [...prev, storeSlug];
+      }
+      
+      // Atualizar localStorage
+      const saved = localStorage.getItem("client_favorite_stores");
+      if (saved) {
+        try {
+          const favorites = JSON.parse(saved);
+          const store = stores.find((s) => s.slug === storeSlug);
+          if (store) {
+            if (isFavorite) {
+              const filtered = favorites.filter((f: any) => f.slug !== storeSlug);
+              localStorage.setItem("client_favorite_stores", JSON.stringify(filtered));
+            } else {
+              const newFavorite = {
+                slug: store.slug,
+                name: store.name,
+                owner: store.owner,
+                image: store.image,
+              };
+              localStorage.setItem("client_favorite_stores", JSON.stringify([...favorites, newFavorite]));
+            }
+          }
+        } catch (error) {
+          console.error("Erro ao salvar favoritos:", error);
+        }
+      } else if (!isFavorite) {
+        const store = stores.find((s) => s.slug === storeSlug);
+        if (store) {
+          const newFavorite = {
+            slug: store.slug,
+            name: store.name,
+            owner: store.owner,
+            image: store.image,
+          };
+          localStorage.setItem("client_favorite_stores", JSON.stringify([newFavorite]));
+        }
+      }
+      
+      return updated;
+    });
+  };
 
   const filteredStores = stores.filter(store =>
     store.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -87,15 +166,26 @@ export default function StoresPage() {
           {filteredStores.map((store) => (
             <Card
               key={store.slug}
-              className="overflow-hidden hover:shadow-xl transition-all cursor-pointer bg-white group"
+              className="overflow-hidden hover:shadow-xl transition-all cursor-pointer bg-white group relative"
               onClick={() => router.push(`/loja/${store.slug}`)}
             >
-              <div className="aspect-video overflow-hidden">
+              <div className="aspect-video overflow-hidden relative">
                 <img
                   src={store.image}
                   alt={store.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
+                {isClientLoggedIn && (
+                  <button
+                    onClick={(e) => toggleFavorite(store.slug, e)}
+                    className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-lg hover:bg-gray-50 transition-colors z-10"
+                  >
+                    <Heart
+                      size={20}
+                      className={favoriteStores.includes(store.slug) ? "text-red-500 fill-red-500" : "text-gray-400"}
+                    />
+                  </button>
+                )}
               </div>
               <div className="p-6">
                 <div className="flex items-start justify-between mb-2">

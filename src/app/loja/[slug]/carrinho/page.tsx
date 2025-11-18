@@ -16,38 +16,35 @@ export default function CartPage() {
   const [showCheckout, setShowCheckout] = useState(false);
 
   useEffect(() => {
-    // Simular carrinho salvo
-    const mockCart = [
-      {
-        id: 1,
-        name: "Camisa Polo Masculina",
-        price: 89.90,
-        image: "https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=200&q=80",
-        quantity: 2
-      },
-      {
-        id: 2,
-        name: "Vestido Floral Feminino",
-        price: 129.90,
-        image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=200&q=80",
-        quantity: 1
+    // Carregar carrinho do localStorage
+    const savedCart = localStorage.getItem(`cart_${slug}`);
+    if (savedCart) {
+      try {
+        setCart(JSON.parse(savedCart));
+      } catch (error) {
+        console.error("Erro ao carregar carrinho:", error);
       }
-    ];
-    setCart(mockCart);
-  }, []);
+    }
+  }, [slug]);
 
   const updateQuantity = (id: number, delta: number) => {
-    setCart(cart.map(item => {
+    const updated = cart.map(item => {
       if (item.id === id) {
         const newQuantity = Math.max(1, item.quantity + delta);
         return { ...item, quantity: newQuantity };
       }
       return item;
-    }));
+    });
+    setCart(updated);
+    // Salvar no localStorage
+    localStorage.setItem(`cart_${slug}`, JSON.stringify(updated));
   };
 
   const removeItem = (id: number) => {
-    setCart(cart.filter(item => item.id !== id));
+    const updated = cart.filter(item => item.id !== id);
+    setCart(updated);
+    // Salvar no localStorage
+    localStorage.setItem(`cart_${slug}`, JSON.stringify(updated));
   };
 
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -59,8 +56,34 @@ export default function CartPage() {
   };
 
   const handlePayment = () => {
-    alert("Pagamento processado com sucesso! 🎉\n\nPedido #" + Math.floor(Math.random() * 10000) + " confirmado.");
-    router.push(`/loja/${slug}`);
+    // Verificar se o lojista configurou o PagBank
+    const merchantConfig = localStorage.getItem(`pagbank_config_${slug}`);
+    if (!merchantConfig) {
+      alert("Esta loja ainda não configurou os métodos de pagamento. Entre em contato com o lojista.");
+      return;
+    }
+
+    try {
+      const config = JSON.parse(merchantConfig);
+      if (!config.api_key || !config.environment) {
+        alert("Configuração de pagamento incompleta. Entre em contato com o lojista.");
+        return;
+      }
+
+      // Aqui você integraria com a API do PagBank usando a configuração do lojista
+      // Por enquanto, vamos simular o processo
+      const orderId = Math.floor(Math.random() * 10000);
+      alert(`Pagamento processado com sucesso! 🎉\n\nPedido #${orderId} confirmado.\n\nO pagamento será processado usando a configuração do lojista.`);
+      
+      // Limpar carrinho após pagamento
+      localStorage.removeItem(`cart_${slug}`);
+      setCart([]);
+      
+      router.push(`/loja/${slug}`);
+    } catch (error) {
+      console.error("Erro ao processar pagamento:", error);
+      alert("Erro ao processar pagamento. Tente novamente.");
+    }
   };
 
   if (cart.length === 0) {
