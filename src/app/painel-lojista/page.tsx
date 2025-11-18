@@ -29,6 +29,24 @@ import {
 import { ProductStorage, Product } from "@/lib/products-storage";
 import { ImageCropper } from "@/components/ImageCropper";
 
+type AppearanceColorField = "primaryButtonColor" | "secondaryButtonColor" | "buttonTextColor";
+
+interface StoreAppearance {
+  banner: string;
+  logo: string;
+  primaryButtonColor: string;
+  secondaryButtonColor: string;
+  buttonTextColor: string;
+}
+
+const defaultStoreAppearance: StoreAppearance = {
+  banner: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&q=80",
+  logo: "",
+  primaryButtonColor: "#D4704A",
+  secondaryButtonColor: "#8B9D83",
+  buttonTextColor: "#FFFFFF",
+};
+
 export default function MerchantDashboard() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -65,10 +83,7 @@ export default function MerchantDashboard() {
   const [configSaved, setConfigSaved] = useState(false);
 
   // Estado para aparência da loja
-  const [storeAppearance, setStoreAppearance] = useState({
-    banner: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&q=80",
-    logo: "",
-  });
+  const [storeAppearance, setStoreAppearance] = useState<StoreAppearance>(defaultStoreAppearance);
 
   // Estados para o cropper
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
@@ -103,7 +118,10 @@ export default function MerchantDashboard() {
   const loadStoreAppearance = () => {
     const saved = localStorage.getItem(`storeAppearance_${merchantId}`);
     if (saved) {
-      setStoreAppearance(JSON.parse(saved));
+      const parsed = JSON.parse(saved);
+      setStoreAppearance({ ...defaultStoreAppearance, ...parsed });
+    } else {
+      setStoreAppearance(defaultStoreAppearance);
     }
   };
 
@@ -308,6 +326,10 @@ export default function MerchantDashboard() {
     } else {
       setStoreAppearance({ ...storeAppearance, logo: "" });
     }
+  };
+
+  const handleColorChange = (field: AppearanceColorField, value: string) => {
+    setStoreAppearance((prev) => ({ ...prev, [field]: value }));
   };
 
   if (!isAuthenticated) {
@@ -946,6 +968,99 @@ export default function MerchantDashboard() {
                       />
                     </label>
                   )}
+                </div>
+
+                {/* Cores dos Botões */}
+                <div>
+                  <Label className="text-base font-semibold mb-2 block">Cores dos Botões</Label>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Personalize as cores principais dos botões que aparecem na sua loja.
+                  </p>
+                  <div className="grid gap-6 md:grid-cols-3">
+                    <div className="space-y-2">
+                      <span className="text-sm font-medium text-gray-700">Botão Principal</span>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          aria-label="Cor do botão principal"
+                          value={storeAppearance.primaryButtonColor}
+                          onChange={(e) => handleColorChange("primaryButtonColor", e.target.value)}
+                          className="w-12 h-12 rounded-md border border-gray-200 cursor-pointer"
+                        />
+                        <Input
+                          value={storeAppearance.primaryButtonColor}
+                          onChange={(e) => handleColorChange("primaryButtonColor", e.target.value)}
+                          className="uppercase"
+                          maxLength={7}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <span className="text-sm font-medium text-gray-700">Botão Secundário</span>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          aria-label="Cor do botão secundário"
+                          value={storeAppearance.secondaryButtonColor}
+                          onChange={(e) => handleColorChange("secondaryButtonColor", e.target.value)}
+                          className="w-12 h-12 rounded-md border border-gray-200 cursor-pointer"
+                        />
+                        <Input
+                          value={storeAppearance.secondaryButtonColor}
+                          onChange={(e) => handleColorChange("secondaryButtonColor", e.target.value)}
+                          className="uppercase"
+                          maxLength={7}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <span className="text-sm font-medium text-gray-700">Texto dos Botões</span>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          aria-label="Cor do texto dos botões"
+                          value={storeAppearance.buttonTextColor}
+                          onChange={(e) => handleColorChange("buttonTextColor", e.target.value)}
+                          className="w-12 h-12 rounded-md border border-gray-200 cursor-pointer"
+                        />
+                        <Input
+                          value={storeAppearance.buttonTextColor}
+                          onChange={(e) => handleColorChange("buttonTextColor", e.target.value)}
+                          className="uppercase"
+                          maxLength={7}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6">
+                    <p className="text-sm font-medium text-gray-700 mb-3">Pré-visualização</p>
+                    <div className="flex flex-wrap gap-3">
+                      <Button
+                        style={{
+                          backgroundColor: storeAppearance.primaryButtonColor,
+                          color: storeAppearance.buttonTextColor,
+                          borderColor: storeAppearance.primaryButtonColor,
+                        }}
+                        className="hover:opacity-90"
+                      >
+                        Botão Principal
+                      </Button>
+                      <Button
+                        variant="outline"
+                        style={{
+                          backgroundColor: storeAppearance.secondaryButtonColor,
+                          color: storeAppearance.buttonTextColor,
+                          borderColor: storeAppearance.secondaryButtonColor,
+                        }}
+                        className="hover:opacity-90"
+                      >
+                        Botão Secundário
+                      </Button>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex gap-3 pt-4 border-t">
