@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Check } from "lucide-react";
 
 export default function PricingSection() {
+  const router = useRouter();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
     "monthly"
   );
@@ -146,6 +148,11 @@ export default function PricingSection() {
 
             {/* CTA Button */}
             <Button
+              onClick={() => {
+                const planType = billingCycle === "monthly" ? "mensal" : "anual";
+                const price = billingCycle === "monthly" ? 40 : 300; // 25 * 12 = 300
+                router.push(`/checkout?plan=${planType}&price=${price}`);
+              }}
               className={`w-full py-6 text-lg font-semibold transition-all text-white ${
                 currentPlan.highlighted
                   ? `${currentPlan.buttonColor} shadow-lg hover:shadow-xl`

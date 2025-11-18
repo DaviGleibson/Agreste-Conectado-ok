@@ -124,7 +124,10 @@ const initialMerchantsData: Merchant[] = [
 export default function AdminStoresPage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState<string>(() => {
+    // Sempre inicia vazio, não carrega do localStorage
+    return "";
+  });
   const [statusFilter, setStatusFilter] = useState<MerchantStatus | "todos">("todos");
   const [merchantsData, setMerchantsData] = useState<Merchant[]>(() => {
     // Carrega dados do localStorage ou usa os iniciais
@@ -300,6 +303,8 @@ export default function AdminStoresPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-white pl-10"
+              autoComplete="off"
+              type="text"
             />
           </div>
           <Select value={statusFilter} onValueChange={(value: MerchantStatus | "todos") => setStatusFilter(value)}>
