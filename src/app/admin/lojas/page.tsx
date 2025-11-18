@@ -152,6 +152,16 @@ export default function AdminStoresPage() {
     }
   }, [router]);
 
+  // Garantir que o campo de busca está sempre vazio ao montar o componente
+  useEffect(() => {
+    setSearchTerm("");
+    // Limpar qualquer valor que o navegador possa ter preenchido
+    const input = document.getElementById("store-search-input") as HTMLInputElement;
+    if (input) {
+      input.value = "";
+    }
+  }, []);
+
   const filteredMerchants = useMemo(() => {
     return merchantsData.filter((merchant) => {
       // Se não há termo de busca, não filtra por busca
@@ -304,7 +314,10 @@ export default function AdminStoresPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-white pl-10"
               autoComplete="off"
-              type="text"
+              autoFocus={false}
+              type="search"
+              name="store-search"
+              id="store-search-input"
             />
           </div>
           <Select value={statusFilter} onValueChange={(value: MerchantStatus | "todos") => setStatusFilter(value)}>
