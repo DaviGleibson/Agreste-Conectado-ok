@@ -21,7 +21,18 @@ import {
   X,
   Image as ImageIcon,
   Scissors,
+  CreditCard,
+  Settings,
+  CheckCircle2,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ProductStorage, Product } from "@/lib/products-storage";
 import { ImageCropper } from "@/components/ImageCropper";
 
@@ -64,6 +75,40 @@ export default function MerchantDashboard() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   // Estado para configuração do PagBank
+  interface MerchantPagBankConfig {
+    api_key: string;
+    environment: "SANDBOX" | "PRODUCTION";
+    webhook_url: string;
+    soft_descriptor: string;
+    enabled_payment_methods: {
+      pix: boolean;
+      boleto: boolean;
+      cartao: boolean;
+    };
+  }
+
+  const [pagbankConfig, setPagbankConfig] = useState<MerchantPagBankConfig>({
+    api_key: "",
+    environment: "SANDBOX",
+    webhook_url: "",
+    soft_descriptor: "",
+    enabled_payment_methods: {
+      pix: false,
+      boleto: false,
+      cartao: false,
+    },
+  });
+
+  const [adminAllowedMethods, setAdminAllowedMethods] = useState<{
+    pix: boolean;
+    boleto: boolean;
+    cartao: boolean;
+  }>({
+    pix: true,
+    boleto: true,
+    cartao: true,
+  });
+
   // Estado para aparência da loja
   const [storeAppearance, setStoreAppearance] = useState<StoreAppearance>(defaultStoreAppearance);
 
@@ -92,6 +137,29 @@ export default function MerchantDashboard() {
     
     // Carregar aparência da loja
     loadStoreAppearance();
+    
+    // Carregar métodos permitidos pelo admin
+    const adminConfig = localStorage.getItem("admin_pagbank_config");
+    if (adminConfig) {
+      try {
+        const config = JSON.parse(adminConfig);
+        if (config.allowed_payment_methods) {
+          setAdminAllowedMethods(config.allowed_payment_methods);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar configuração do admin:", error);
+      }
+    }
+    
+    // Carregar configuração do PagBank do lojista
+    const savedConfig = localStorage.getItem(`pagbank_config_${merchantId}`);
+    if (savedConfig) {
+      try {
+        setPagbankConfig(JSON.parse(savedConfig));
+      } catch (error) {
+        console.error("Erro ao carregar configuração do PagBank:", error);
+      }
+    }
   }, []);
  
   const loadStoreAppearance = () => {
@@ -349,6 +417,10 @@ export default function MerchantDashboard() {
             <TabsTrigger value="aparencia">
               <ImageIcon size={16} className="mr-2" />
               Aparência
+            </TabsTrigger>
+            <TabsTrigger value="pagamentos">
+              <DollarSign size={16} className="mr-2" />
+              Pagamentos
             </TabsTrigger>
           </TabsList>
 
@@ -1008,6 +1080,189 @@ export default function MerchantDashboard() {
                   >
                     <ImageIcon size={18} className="mr-2" />
                     Salvar Aparência
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="pagamentos">
+            <Card className="p-6 bg-white">
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b">
+                <div className="w-12 h-12 rounded-lg bg-[#D4704A]/10 flex items-center justify-center">
+                  <CreditCard size={24} className="text-[#D4704A]" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Configuração de Pagamentos</h2>
+                  <p className="text-sm text-gray-600">
+                    Configure os métodos de pagamento que seus clientes poderão usar
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {/* Configuração básica do PagBank */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Configuração do PagBank</h3>
+                  
+                  <div>
+                    <Label htmlFor="merchant_api_key">Token de Acesso (API Key) *</Label>
+                    <Input
+                      id="merchant_api_key"
+                      type="password"
+                      value={pagbankConfig.api_key}
+                      onChange={(e) => setPagbankConfig((prev) => ({ ...prev, api_key: e.target.value }))}
+                      placeholder="Cole aqui seu token de acesso"
+                      className="font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Ambiente *</Label>
+                    <Select
+                      value={pagbankConfig.environment}
+                      onValueChange={(value: "SANDBOX" | "PRODUCTION") =>
+                        setPagbankConfig((prev) => ({ ...prev, environment: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o ambiente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="SANDBOX">Sandbox (Testes)</SelectItem>
+                        <SelectItem value="PRODUCTION">Production (Produção)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="merchant_soft_descriptor">Nome na Fatura do Cartão</Label>
+                    <Input
+                      id="merchant_soft_descriptor"
+                      value={pagbankConfig.soft_descriptor}
+                      onChange={(e) =>
+                        setPagbankConfig((prev) => ({ ...prev, soft_descriptor: e.target.value.slice(0, 13) }))
+                      }
+                      maxLength={13}
+                      placeholder="Nome da sua loja"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Máx. 13 caracteres.</p>
+                  </div>
+                </div>
+
+                {/* Métodos de pagamento */}
+                <div className="border-t pt-6 space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Métodos de Pagamento Disponíveis
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Escolha quais métodos de pagamento você quer disponibilizar para seus clientes.
+                      Apenas os métodos habilitados pelo administrador aparecerão aqui.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* PIX */}
+                    <div className={`flex items-center justify-between p-4 border rounded-lg ${
+                      !adminAllowedMethods.pix ? "opacity-50 bg-gray-50" : ""
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                          <span className="text-xl">💳</span>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">PIX</p>
+                          <p className="text-sm text-gray-600">Pagamento instantâneo via QR Code</p>
+                          {!adminAllowedMethods.pix && (
+                            <p className="text-xs text-red-600 mt-1">Não habilitado pelo administrador</p>
+                          )}
+                        </div>
+                      </div>
+                      <Switch
+                        checked={pagbankConfig.enabled_payment_methods.pix}
+                        disabled={!adminAllowedMethods.pix}
+                        onCheckedChange={(checked) =>
+                          setPagbankConfig((prev) => ({
+                            ...prev,
+                            enabled_payment_methods: { ...prev.enabled_payment_methods, pix: checked },
+                          }))
+                        }
+                      />
+                    </div>
+
+                    {/* Boleto */}
+                    <div className={`flex items-center justify-between p-4 border rounded-lg ${
+                      !adminAllowedMethods.boleto ? "opacity-50 bg-gray-50" : ""
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <span className="text-xl">📄</span>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">Boleto Bancário</p>
+                          <p className="text-sm text-gray-600">Vencimento em 3 dias úteis</p>
+                          {!adminAllowedMethods.boleto && (
+                            <p className="text-xs text-red-600 mt-1">Não habilitado pelo administrador</p>
+                          )}
+                        </div>
+                      </div>
+                      <Switch
+                        checked={pagbankConfig.enabled_payment_methods.boleto}
+                        disabled={!adminAllowedMethods.boleto}
+                        onCheckedChange={(checked) =>
+                          setPagbankConfig((prev) => ({
+                            ...prev,
+                            enabled_payment_methods: { ...prev.enabled_payment_methods, boleto: checked },
+                          }))
+                        }
+                      />
+                    </div>
+
+                    {/* Cartão */}
+                    <div className={`flex items-center justify-between p-4 border rounded-lg ${
+                      !adminAllowedMethods.cartao ? "opacity-50 bg-gray-50" : ""
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                          <CreditCard size={20} className="text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">Cartão de Crédito</p>
+                          <p className="text-sm text-gray-600">Parcelamento em até 12x</p>
+                          {!adminAllowedMethods.cartao && (
+                            <p className="text-xs text-red-600 mt-1">Não habilitado pelo administrador</p>
+                          )}
+                        </div>
+                      </div>
+                      <Switch
+                        checked={pagbankConfig.enabled_payment_methods.cartao}
+                        disabled={!adminAllowedMethods.cartao}
+                        onCheckedChange={(checked) =>
+                          setPagbankConfig((prev) => ({
+                            ...prev,
+                            enabled_payment_methods: { ...prev.enabled_payment_methods, cartao: checked },
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button
+                    onClick={() => {
+                      if (!pagbankConfig.api_key || !pagbankConfig.environment) {
+                        alert("API Key e Ambiente são obrigatórios");
+                        return;
+                      }
+                      localStorage.setItem(`pagbank_config_${merchantId}`, JSON.stringify(pagbankConfig));
+                      alert("Configuração de pagamentos salva com sucesso!");
+                    }}
+                    className="bg-[#D4704A] hover:bg-[#c05f3d] text-white"
+                  >
+                    <Settings size={16} className="mr-2" />
+                    Salvar Configuração
                   </Button>
                 </div>
               </div>

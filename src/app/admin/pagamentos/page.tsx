@@ -33,6 +33,12 @@ interface AdminPagBankConfig {
   sub_merchant_name: string;
   sub_merchant_reference_id: string;
   sub_merchant_mcc: string;
+  // Métodos de pagamento permitidos para lojistas
+  allowed_payment_methods: {
+    pix: boolean;
+    boleto: boolean;
+    cartao: boolean;
+  };
 }
 
 const defaultAdminPagBankConfig: AdminPagBankConfig = {
@@ -45,6 +51,11 @@ const defaultAdminPagBankConfig: AdminPagBankConfig = {
   sub_merchant_name: "",
   sub_merchant_reference_id: "",
   sub_merchant_mcc: "5691",
+  allowed_payment_methods: {
+    pix: true,
+    boleto: true,
+    cartao: true,
+  },
 };
 
 export default function AdminPaymentsPage() {
@@ -274,13 +285,89 @@ export default function AdminPaymentsPage() {
             </Button>
           </div>
 
+          {/* Configuração de Métodos de Pagamento Permitidos */}
+          <div className="border-t pt-6 space-y-4">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                Métodos de Pagamento Permitidos para Lojistas
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Escolha quais métodos de pagamento os lojistas poderão disponibilizar para seus clientes
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <span className="text-xl">💳</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">PIX</p>
+                    <p className="text-sm text-gray-600">Pagamento instantâneo via QR Code</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={pagbankConfig.allowed_payment_methods.pix}
+                  onCheckedChange={(checked) =>
+                    setPagbankConfig((prev) => ({
+                      ...prev,
+                      allowed_payment_methods: { ...prev.allowed_payment_methods, pix: checked },
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <span className="text-xl">📄</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Boleto Bancário</p>
+                    <p className="text-sm text-gray-600">Vencimento em 3 dias úteis</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={pagbankConfig.allowed_payment_methods.boleto}
+                  onCheckedChange={(checked) =>
+                    setPagbankConfig((prev) => ({
+                      ...prev,
+                      allowed_payment_methods: { ...prev.allowed_payment_methods, boleto: checked },
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <CreditCard size={20} className="text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Cartão de Crédito</p>
+                    <p className="text-sm text-gray-600">Parcelamento em até 12x</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={pagbankConfig.allowed_payment_methods.cartao}
+                  onCheckedChange={(checked) =>
+                    setPagbankConfig((prev) => ({
+                      ...prev,
+                      allowed_payment_methods: { ...prev.allowed_payment_methods, cartao: checked },
+                    }))
+                  }
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 space-y-1">
-            <p className="font-semibold">Métodos de pagamento habilitados</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>PIX com QR Code dinâmico</li>
-              <li>Boleto bancário com vencimento configurável</li>
-              <li>Cartão de crédito com parcelamento em até 12x</li>
-            </ul>
+            <p className="font-semibold">Sobre os Métodos de Pagamento</p>
+            <p className="text-xs">
+              Os lojistas poderão escolher quais métodos disponibilizar para seus clientes, 
+              mas apenas entre os métodos que você habilitar aqui.
+            </p>
           </div>
 
           <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 space-y-2">

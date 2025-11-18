@@ -5,9 +5,205 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Trash2, Plus, Minus, CreditCard } from "lucide-react";
+import { ArrowLeft, Trash2, Plus, Minus, CreditCard, CheckCircle2 } from "lucide-react";
 
-export default function CartPage() {
+interface PaymentMethodsProps {
+  slug: string;
+  total: number;
+  onPayment: () => void;
+}
+
+function PaymentMethods({ slug, total, onPayment }: PaymentMethodsProps) {
+  const [selectedMethod, setSelectedMethod] = useState<"pix" | "boleto" | "cartao" | "">("");
+  const [availableMethods, setAvailableMethods] = useState<{
+    pix: boolean;
+    boleto: boolean;
+    cartao: boolean;
+  }>({
+    pix: false,
+    boleto: false,
+    cartao: false,
+  });
+  const [cardData, setCardData] = useState({
+    number: "",
+    expiry: "",
+    cvv: "",
+  });
+
+  useEffect(() => {
+    // Carregar métodos de pagamento configurados pelo lojista
+    const merchantConfig = localStorage.getItem(`pagbank_config_${slug}`);
+    if (merchantConfig) {
+      try {
+        const config = JSON.parse(merchantConfig);
+        if (config.enabled_payment_methods) {
+          setAvailableMethods(config.enabled_payment_methods);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar métodos de pagamento:", error);
+      }
+    }
+  }, [slug]);
+
+  const handlePayment = () => {
+    if (!selectedMethod) {
+      alert("Selecione um método de pagamento");
+      return;
+    }
+
+    if (selectedMethod === "cartao" && (!cardData.number || !cardData.expiry || !cardData.cvv)) {
+      alert("Preencha todos os dados do cartão");
+      return;
+    }
+
+    onPayment();
+  };
+
+  const hasAnyMethod = availableMethods.pix || availableMethods.boleto || availableMethods.cartao;
+
+  if (!hasAnyMethod) {
+    return (
+      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <p className="text-sm text-yellow-800">
+          Esta loja ainda não configurou métodos de pagamento. Entre em contato com o lojista.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Escolha o método de pagamento</h3>
+      
+      <div className="space-y-3">
+        {availableMethods.pix && (
+          <button
+            onClick={() => setSelectedMethod("pix")}
+            className={`w-full p-4 border-2 rounded-lg text-left transition-all ${
+              selectedMethod === "pix"
+                ? "border-[#D4704A] bg-[#D4704A]/5"
+                : "border-gray-200 hover:border-[#D4704A]/50"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <span className="text-xl">💳</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">PIX</p>
+                  <p className="text-sm text-gray-600">Pagamento instantâneo</p>
+                </div>
+              </div>
+              {selectedMethod === "pix" && (
+                <CheckCircle2 size={20} className="text-[#D4704A]" />
+              )}
+            </div>
+          </button>
+        )}
+
+        {availableMethods.boleto && (
+          <button
+            onClick={() => setSelectedMethod("boleto")}
+            className={`w-full p-4 border-2 rounded-lg text-left transition-all ${
+              selectedMethod === "boleto"
+                ? "border-[#D4704A] bg-[#D4704A]/5"
+                : "border-gray-200 hover:border-[#D4704A]/50"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <span className="text-xl">📄</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Boleto Bancário</p>
+                  <p className="text-sm text-gray-600">Vencimento em 3 dias úteis</p>
+                </div>
+              </div>
+              {selectedMethod === "boleto" && (
+                <CheckCircle2 size={20} className="text-[#D4704A]" />
+              )}
+            </div>
+          </button>
+        )}
+
+        {availableMethods.cartao && (
+          <button
+            onClick={() => setSelectedMethod("cartao")}
+            className={`w-full p-4 border-2 rounded-lg text-left transition-all ${
+              selectedMethod === "cartao"
+                ? "border-[#D4704A] bg-[#D4704A]/5"
+                : "border-gray-200 hover:border-[#D4704A]/50"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <CreditCard size={20} className="text-purple-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Cartão de Crédito</p>
+                  <p className="text-sm text-gray-600">Parcelamento em até 12x</p>
+                </div>
+              </div>
+              {selectedMethod === "cartao" && (
+                <CheckCircle2 size={20} className="text-[#D4704A]" />
+              )}
+            </div>
+          </button>
+        )}
+      </div>
+
+      {selectedMethod === "cartao" && (
+        <div className="space-y-4 pt-4 border-t">
+          <div>
+            <label className="text-sm font-semibold text-gray-700 mb-2 block">
+              Número do Cartão
+            </label>
+            <Input
+              placeholder="0000 0000 0000 0000"
+              value={cardData.number}
+              onChange={(e) => setCardData({ ...cardData, number: e.target.value })}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                Validade
+              </label>
+              <Input
+                placeholder="MM/AA"
+                value={cardData.expiry}
+                onChange={(e) => setCardData({ ...cardData, expiry: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                CVV
+              </label>
+              <Input
+                placeholder="123"
+                value={cardData.cvv}
+                onChange={(e) => setCardData({ ...cardData, cvv: e.target.value })}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Button
+        onClick={handlePayment}
+        className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-lg"
+        disabled={!selectedMethod}
+      >
+        Pagar R$ {total.toFixed(2)}
+      </Button>
+    </div>
+  );
+}
+
+function CartPage() {
   const params = useParams();
   const router = useRouter();
   const slug = params.slug as string;
@@ -202,34 +398,7 @@ export default function CartPage() {
                   Finalizar Compra
                 </Button>
               ) : (
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                      Número do Cartão
-                    </label>
-                    <Input placeholder="0000 0000 0000 0000" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                        Validade
-                      </label>
-                      <Input placeholder="MM/AA" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                        CVV
-                      </label>
-                      <Input placeholder="123" />
-                    </div>
-                  </div>
-                  <Button
-                    onClick={handlePayment}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-lg"
-                  >
-                    Pagar R$ {total.toFixed(2)}
-                  </Button>
-                </div>
+                <PaymentMethods slug={slug} total={total} onPayment={handlePayment} />
               )}
             </Card>
           </div>
@@ -238,3 +407,5 @@ export default function CartPage() {
     </div>
   );
 }
+
+export default CartPage;
