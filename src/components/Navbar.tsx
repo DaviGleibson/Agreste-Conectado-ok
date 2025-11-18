@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
@@ -23,9 +24,21 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <h1 className="text-2xl font-bold text-[#D4704A]">
-              Agreste Conectado
-            </h1>
+            <div className="flex items-center gap-3">
+              <div className="relative h-10 w-10">
+                <Image
+                  src="/branding/agreste-logo.png"
+                  alt="Logo Agreste Conectado"
+                  fill
+                  sizes="40px"
+                  priority
+                  className="object-contain"
+                />
+              </div>
+              <h1 className="text-2xl font-bold text-[#D4704A]">
+                Agreste Conectado
+              </h1>
+            </div>
           </div>
 
           {/* Desktop Navigation */}
