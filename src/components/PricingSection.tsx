@@ -13,8 +13,8 @@ export default function PricingSection() {
   const plans = [
     {
       name: "Plano Mensal",
-      price: billingCycle === "monthly" ? "R$ 99" : "R$ 79",
-      period: billingCycle === "monthly" ? "/mês" : "/mês",
+      price: "R$ 40",
+      period: "/mês",
       description: "Perfeito para começar",
       features: [
         "Loja online personalizada",
@@ -25,12 +25,12 @@ export default function PricingSection() {
         "Relatórios básicos",
       ],
       highlighted: false,
-      savings: billingCycle === "annual" ? "Economize 20%" : null,
+      savings: null,
     },
     {
       name: "Plano Anual",
-      price: billingCycle === "monthly" ? "R$ 89" : "R$ 69",
-      period: billingCycle === "monthly" ? "/mês" : "/mês",
+      price: "R$ 25",
+      period: "/mês",
       description: "Melhor custo-benefício",
       features: [
         "Tudo do Plano Mensal",
@@ -43,7 +43,7 @@ export default function PricingSection() {
         "2 meses grátis",
       ],
       highlighted: true,
-      savings: "Economize até R$ 240/ano",
+      savings: "Economize até R$ 180/ano",
     },
   ];
 
@@ -165,13 +165,6 @@ export default function PricingSection() {
           ))}
         </div>
 
-        {/* Bottom note */}
-        <div className="text-center mt-12">
-          <p className="text-gray-600">
-            Todos os planos incluem 14 dias de teste grátis. Cancele quando
-            quiser.
-          </p>
-        </div>
       </div>
     </section>
   );
