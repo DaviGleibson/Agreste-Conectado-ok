@@ -10,42 +10,47 @@ export default function PricingSection() {
     "monthly"
   );
 
-  const plans = [
-    {
-      name: "Plano Mensal",
-      price: "R$ 40",
-      period: "/mês",
-      description: "Perfeito para começar",
-      features: [
-        "Loja online personalizada",
-        "Até 100 produtos",
-        "Painel de controle completo",
-        "Suporte por email",
-        "Integração com redes sociais",
-        "Relatórios básicos",
-      ],
-      highlighted: false,
-      savings: null,
-    },
-    {
-      name: "Plano Anual",
-      price: "R$ 25",
-      period: "/mês",
-      description: "Melhor custo-benefício",
-      features: [
-        "Tudo do Plano Mensal",
-        "Produtos ilimitados",
-        "Suporte prioritário 24/7",
-        "Domínio personalizado grátis",
-        "Relatórios avançados",
-        "Marketing por email",
-        "Integração com marketplaces",
-        "2 meses grátis",
-      ],
-      highlighted: true,
-      savings: "Economize até R$ 180/ano",
-    },
-  ];
+  const monthlyPlan = {
+    name: "Plano Mensal",
+    price: "R$ 40",
+    period: "/mês",
+    description: "Perfeito para começar",
+    features: [
+      "Loja online personalizada",
+      "Até 100 produtos",
+      "Painel de controle completo",
+      "Suporte por email",
+      "Integração com redes sociais",
+      "Relatórios básicos",
+    ],
+    buttonColor: "bg-[#8B9D83] hover:bg-[#7a8a74]",
+    checkColor: "bg-[#8B9D83]",
+    borderColor: "border-gray-200 hover:border-[#8B9D83]",
+  };
+
+  const annualPlan = {
+    name: "Plano Anual",
+    price: "R$ 25",
+    period: "/mês",
+    description: "Melhor custo-benefício",
+    savings: "Economize até R$ 180/ano",
+    features: [
+      "Tudo do Plano Mensal",
+      "Produtos ilimitados",
+      "Suporte prioritário 24/7",
+      "Domínio personalizado grátis",
+      "Relatórios avançados",
+      "Marketing por email",
+      "Integração com marketplaces",
+      "2 meses grátis",
+    ],
+    buttonColor: "bg-[#D4704A] hover:bg-[#c05f3d]",
+    checkColor: "bg-[#D4704A]",
+    borderColor: "border-2 border-[#D4704A]",
+    highlighted: true,
+  };
+
+  const currentPlan = billingCycle === "monthly" ? monthlyPlan : annualPlan;
 
   return (
     <section
@@ -94,75 +99,68 @@ export default function PricingSection() {
           </div>
         </div>
 
-        {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          {plans.map((plan, index) => (
-            <Card
-              key={index}
-              className={`relative p-8 rounded-2xl transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 ${
-                plan.highlighted
-                  ? "border-2 border-[#D4704A] shadow-xl bg-white"
-                  : "border border-gray-200 bg-white hover:border-[#8B9D83]"
+        {/* Pricing Card */}
+        <div className="flex justify-center max-w-2xl mx-auto">
+          <Card
+            className={`relative p-8 rounded-2xl transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 w-full ${
+              currentPlan.highlighted
+                ? `${currentPlan.borderColor} shadow-xl bg-white`
+                : `${currentPlan.borderColor} bg-white`
+            }`}
+          >
+            {/* Popular badge */}
+            {currentPlan.highlighted && (
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <span className="bg-gradient-to-r from-[#D4704A] to-[#c05f3d] text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
+                  ⭐ Mais Popular
+                </span>
+              </div>
+            )}
+
+            {/* Plan header */}
+            <div className="text-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                {currentPlan.name}
+              </h3>
+              <p className="text-gray-600 mb-4">{currentPlan.description}</p>
+              <div className="flex items-baseline justify-center gap-2">
+                <span className="text-5xl font-bold text-gray-900">
+                  {currentPlan.price}
+                </span>
+                <span className="text-gray-600">{currentPlan.period}</span>
+              </div>
+              {currentPlan.savings && (
+                <p className="text-sm text-[#8B9D83] font-semibold mt-2">
+                  {currentPlan.savings}
+                </p>
+              )}
+            </div>
+
+            {/* Features list */}
+            <ul className="space-y-4 mb-8">
+              {currentPlan.features.map((feature, featureIndex) => (
+                <li key={featureIndex} className="flex items-start gap-3">
+                  <div
+                    className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${currentPlan.checkColor}`}
+                  >
+                    <Check size={14} className="text-white" />
+                  </div>
+                  <span className="text-gray-700">{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            {/* CTA Button */}
+            <Button
+              className={`w-full py-6 text-lg font-semibold transition-all text-white ${
+                currentPlan.highlighted
+                  ? `${currentPlan.buttonColor} shadow-lg hover:shadow-xl`
+                  : currentPlan.buttonColor
               }`}
             >
-              {/* Popular badge */}
-              {plan.highlighted && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <span className="bg-gradient-to-r from-[#D4704A] to-[#c05f3d] text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
-                    ⭐ Mais Popular
-                  </span>
-                </div>
-              )}
-
-              {/* Plan header */}
-              <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {plan.name}
-                </h3>
-                <p className="text-gray-600 mb-4">{plan.description}</p>
-                <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-5xl font-bold text-gray-900">
-                    {plan.price}
-                  </span>
-                  <span className="text-gray-600">{plan.period}</span>
-                </div>
-                {plan.savings && (
-                  <p className="text-sm text-[#8B9D83] font-semibold mt-2">
-                    {plan.savings}
-                  </p>
-                )}
-              </div>
-
-              {/* Features list */}
-              <ul className="space-y-4 mb-8">
-                {plan.features.map((feature, featureIndex) => (
-                  <li key={featureIndex} className="flex items-start gap-3">
-                    <div
-                      className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
-                        plan.highlighted
-                          ? "bg-[#D4704A]"
-                          : "bg-[#8B9D83]"
-                      }`}
-                    >
-                      <Check size={14} className="text-white" />
-                    </div>
-                    <span className="text-gray-700">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              {/* CTA Button */}
-              <Button
-                className={`w-full py-6 text-lg font-semibold transition-all ${
-                  plan.highlighted
-                    ? "bg-[#D4704A] hover:bg-[#c05f3d] text-white shadow-lg hover:shadow-xl"
-                    : "bg-[#8B9D83] hover:bg-[#7a8a74] text-white"
-                }`}
-              >
-                Contratar Plano
-              </Button>
-            </Card>
-          ))}
+              Contratar Plano
+            </Button>
+          </Card>
         </div>
 
       </div>
