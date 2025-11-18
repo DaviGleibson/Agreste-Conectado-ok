@@ -151,12 +151,12 @@ export default function AdminStoresPage() {
 
   const filteredMerchants = useMemo(() => {
     return merchantsData.filter((merchant) => {
-      const searchLower = searchTerm.toLowerCase();
-      const matchesSearch =
-        merchant.name.toLowerCase().includes(searchLower) ||
-        merchant.owner.toLowerCase().includes(searchLower) ||
-        merchant.email.toLowerCase().includes(searchLower) ||
-        merchant.id.toLowerCase().includes(searchLower);
+      // Se não há termo de busca, não filtra por busca
+      const matchesSearch = searchTerm.trim() === "" || 
+        merchant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        merchant.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        merchant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        merchant.id.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === "todos" || merchant.status === statusFilter;
       return matchesSearch && matchesStatus;
     });

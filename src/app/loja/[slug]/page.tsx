@@ -203,117 +203,119 @@ export default function StorePage() {
 
         {/* Products Grid */}
         {!isStorePaused && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.map((product) => {
-            const currentImageIndex = selectedImageIndex[product.id] || 0;
-            const hasMultipleImages = product.images.length > 1;
+          <>
+            {filteredProducts.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredProducts.map((product) => {
+                  const currentImageIndex = selectedImageIndex[product.id] || 0;
+                  const hasMultipleImages = product.images.length > 1;
 
-            return (
-              <Card
-                key={product.id}
-                className="overflow-hidden hover:shadow-xl transition-shadow bg-white"
-              >
-                <div className="aspect-square overflow-hidden relative group">
-                  <img
-                    src={product.images[currentImageIndex]}
-                    alt={product.name}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                  
-                  {/* Image Navigation */}
-                  {hasMultipleImages && (
-                    <>
-                      <button
-                        onClick={() => prevImage(product.id, product.images.length)}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <ChevronLeft size={20} />
-                      </button>
-                      <button
-                        onClick={() => nextImage(product.id, product.images.length)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <ChevronRight size={20} />
-                      </button>
-                      
-                      {/* Image Indicators */}
-                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                        {product.images.map((_, idx) => (
-                          <div
-                            key={idx}
-                            className={`w-2 h-2 rounded-full ${
-                              idx === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                            }`}
-                          />
-                        ))}
+                  return (
+                    <Card
+                      key={product.id}
+                      className="overflow-hidden hover:shadow-xl transition-shadow bg-white"
+                    >
+                      <div className="aspect-square overflow-hidden relative group">
+                        <img
+                          src={product.images[currentImageIndex]}
+                          alt={product.name}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                        
+                        {/* Image Navigation */}
+                        {hasMultipleImages && (
+                          <>
+                            <button
+                              onClick={() => prevImage(product.id, product.images.length)}
+                              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <ChevronLeft size={20} />
+                            </button>
+                            <button
+                              onClick={() => nextImage(product.id, product.images.length)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <ChevronRight size={20} />
+                            </button>
+                            
+                            {/* Image Indicators */}
+                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                              {product.images.map((_, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`w-2 h-2 rounded-full ${
+                                    idx === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </>
+                        )}
                       </div>
-                    </>
-                  )}
-                </div>
-                <div className="p-4">
-                  {product.category && (
-                    <span 
-                      className="text-xs font-semibold px-2 py-1 rounded"
-                      style={{
-                        color: storeAppearance.secondaryButtonColor,
-                        backgroundColor: `${storeAppearance.secondaryButtonColor}20`,
-                      }}
-                    >
-                      {product.category}
-                    </span>
-                  )}
-                  <h3 className="text-lg font-bold text-gray-900 mt-2 mb-1">
-                    {product.name}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                    {product.description}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span 
-                        className="text-2xl font-bold"
-                        style={{ color: storeAppearance.primaryButtonColor }}
-                      >
-                        R$ {product.price.toFixed(2)}
-                      </span>
-                      <p className={`text-xs mt-1 ${
-                        product.stock > 10 ? 'text-green-600' : 
-                        product.stock > 0 ? 'text-yellow-600' : 'text-red-600'
-                      }`}>
-                        {product.stock > 0 ? `${product.stock} em estoque` : 'Esgotado'}
-                      </p>
-                    </div>
-                    <Button
-                      onClick={() => addToCart(product)}
-                      disabled={product.stock === 0}
-                      className="text-white disabled:opacity-50"
-                      style={{
-                        backgroundColor: storeAppearance.primaryButtonColor,
-                        color: storeAppearance.buttonTextColor,
-                      }}
-                      onMouseEnter={(e) => {
-                        if (product.stock !== 0) {
-                          e.currentTarget.style.opacity = "0.9";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.opacity = product.stock === 0 ? "0.5" : "1";
-                      }}
-                    >
-                      Adicionar
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-
-          {filteredProducts.length === 0 && !isStorePaused && (
-            <div className="text-center py-12">
-              <p className="text-gray-600">Nenhum produto encontrado</p>
-            </div>
-          )}
+                      <div className="p-4">
+                        {product.category && (
+                          <span 
+                            className="text-xs font-semibold px-2 py-1 rounded"
+                            style={{
+                              color: storeAppearance.secondaryButtonColor,
+                              backgroundColor: `${storeAppearance.secondaryButtonColor}20`,
+                            }}
+                          >
+                            {product.category}
+                          </span>
+                        )}
+                        <h3 className="text-lg font-bold text-gray-900 mt-2 mb-1">
+                          {product.name}
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                          {product.description}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span 
+                              className="text-2xl font-bold"
+                              style={{ color: storeAppearance.primaryButtonColor }}
+                            >
+                              R$ {product.price.toFixed(2)}
+                            </span>
+                            <p className={`text-xs mt-1 ${
+                              product.stock > 10 ? 'text-green-600' : 
+                              product.stock > 0 ? 'text-yellow-600' : 'text-red-600'
+                            }`}>
+                              {product.stock > 0 ? `${product.stock} em estoque` : 'Esgotado'}
+                            </p>
+                          </div>
+                          <Button
+                            onClick={() => addToCart(product)}
+                            disabled={product.stock === 0}
+                            className="text-white disabled:opacity-50"
+                            style={{
+                              backgroundColor: storeAppearance.primaryButtonColor,
+                              color: storeAppearance.buttonTextColor,
+                            }}
+                            onMouseEnter={(e) => {
+                              if (product.stock !== 0) {
+                                e.currentTarget.style.opacity = "0.9";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.opacity = product.stock === 0 ? "0.5" : "1";
+                            }}
+                          >
+                            Adicionar
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-600">Nenhum produto encontrado</p>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>
