@@ -8,6 +8,14 @@ import { Input } from "@/components/ui/input";
 import { ShoppingCart, Search, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductStorage, Product } from "@/lib/products-storage";
 
+interface StoreAppearance {
+  banner: string;
+  logo: string;
+  primaryButtonColor: string;
+  secondaryButtonColor: string;
+  buttonTextColor: string;
+}
+
 export default function StorePage() {
   const params = useParams();
   const router = useRouter();
@@ -17,18 +25,42 @@ export default function StorePage() {
   const [cart, setCart] = useState<any[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<{[key: number]: number}>({});
+  const [storeAppearance, setStoreAppearance] = useState<StoreAppearance>({
+    banner: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&q=80",
+    logo: "",
+    primaryButtonColor: "#D4704A",
+    secondaryButtonColor: "#8B9D83",
+    buttonTextColor: "#FFFFFF",
+  });
 
   useEffect(() => {
     // Carregar produtos do lojista
     const merchantProducts = ProductStorage.getByMerchant(slug);
     setProducts(merchantProducts);
+    
+    // Carregar aparência personalizada da loja
+    const saved = localStorage.getItem(`storeAppearance_${slug}`);
+    if (saved) {
+      try {
+        const appearance = JSON.parse(saved);
+        setStoreAppearance({
+          banner: appearance.banner || "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&q=80",
+          logo: appearance.logo || "",
+          primaryButtonColor: appearance.primaryButtonColor || "#D4704A",
+          secondaryButtonColor: appearance.secondaryButtonColor || "#8B9D83",
+          buttonTextColor: appearance.buttonTextColor || "#FFFFFF",
+        });
+      } catch (error) {
+        console.error("Erro ao carregar aparência da loja:", error);
+      }
+    }
   }, [slug]);
 
   const store = {
     name: "Loja do Davi",
     owner: "Davi Silva",
     description: "Moda masculina e feminina direto do Parque das Feiras",
-    banner: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&q=80",
+    banner: storeAppearance.banner,
   };
 
   const filteredProducts = products.filter(product =>
@@ -79,7 +111,16 @@ export default function StorePage() {
             </Button>
             <Button
               onClick={() => router.push(`/loja/${slug}/carrinho`)}
-              className="bg-[#D4704A] hover:bg-[#c05f3d] text-white relative"
+              className="text-white relative"
+              style={{
+                backgroundColor: storeAppearance.primaryButtonColor,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = "0.9";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = "1";
+              }}
             >
               <ShoppingCart size={20} className="mr-2" />
               Carrinho
@@ -175,7 +216,13 @@ export default function StorePage() {
                 </div>
                 <div className="p-4">
                   {product.category && (
-                    <span className="text-xs font-semibold text-[#8B9D83] bg-[#8B9D83]/10 px-2 py-1 rounded">
+                    <span 
+                      className="text-xs font-semibold px-2 py-1 rounded"
+                      style={{
+                        color: storeAppearance.secondaryButtonColor,
+                        backgroundColor: `${storeAppearance.secondaryButtonColor}20`,
+                      }}
+                    >
                       {product.category}
                     </span>
                   )}
@@ -187,7 +234,10 @@ export default function StorePage() {
                   </p>
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-2xl font-bold text-[#D4704A]">
+                      <span 
+                        className="text-2xl font-bold"
+                        style={{ color: storeAppearance.primaryButtonColor }}
+                      >
                         R$ {product.price.toFixed(2)}
                       </span>
                       <p className={`text-xs mt-1 ${
@@ -200,7 +250,19 @@ export default function StorePage() {
                     <Button
                       onClick={() => addToCart(product)}
                       disabled={product.stock === 0}
-                      className="bg-[#D4704A] hover:bg-[#c05f3d] text-white disabled:opacity-50"
+                      className="text-white disabled:opacity-50"
+                      style={{
+                        backgroundColor: storeAppearance.primaryButtonColor,
+                        color: storeAppearance.buttonTextColor,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (product.stock !== 0) {
+                          e.currentTarget.style.opacity = "0.9";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.opacity = product.stock === 0 ? "0.5" : "1";
+                      }}
                     >
                       Adicionar
                     </Button>

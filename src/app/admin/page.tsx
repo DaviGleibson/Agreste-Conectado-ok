@@ -128,28 +128,34 @@ export default function AdminPage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <Card
-              key={index}
-              className="p-6 bg-white hover:shadow-lg transition-shadow"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div
-                  className="w-12 h-12 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: `${stat.color}20` }}
-                >
-                  <stat.icon size={24} style={{ color: stat.color }} />
+          {stats.map((stat, index) => {
+            const isStoresCard = stat.title === "Lojas Online";
+            return (
+              <Card
+                key={index}
+                onClick={isStoresCard ? () => router.push("/admin/lojas") : undefined}
+                className={`p-6 bg-white hover:shadow-lg transition-shadow ${
+                  isStoresCard ? "cursor-pointer hover:border-[#8B9D83]" : ""
+                }`}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div
+                    className="w-12 h-12 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: `${stat.color}20` }}
+                  >
+                    <stat.icon size={24} style={{ color: stat.color }} />
+                  </div>
+                  <span className="text-sm font-semibold text-green-600">
+                    {stat.change}
+                  </span>
                 </div>
-                <span className="text-sm font-semibold text-green-600">
-                  {stat.change}
-                </span>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-1">
-                {stat.value}
-              </h3>
-              <p className="text-sm text-gray-600">{stat.title}</p>
-            </Card>
-          ))}
+                <h3 className="text-2xl font-bold text-gray-900 mb-1">
+                  {stat.value}
+                </h3>
+                <p className="text-sm text-gray-600">{stat.title}</p>
+              </Card>
+            );
+          })}
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
@@ -191,7 +197,10 @@ export default function AdminPage() {
                 <Users size={18} className="mr-2" />
                 Gerenciar Comerciantes
               </Button>
-              <Button className="w-full justify-start bg-[#8B9D83] hover:bg-[#7a8a74] text-white">
+              <Button
+                className="w-full justify-start bg-[#8B9D83] hover:bg-[#7a8a74] text-white"
+                onClick={() => router.push("/admin/lojas")}
+              >
                 <Store size={18} className="mr-2" />
                 Ver Todas as Lojas
               </Button>

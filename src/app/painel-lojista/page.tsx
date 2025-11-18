@@ -8,8 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Package,
   Plus,
@@ -19,8 +17,6 @@ import {
   DollarSign,
   TrendingUp,
   LogOut,
-  Settings,
-  CreditCard,
   Upload,
   X,
   Image as ImageIcon,
@@ -68,20 +64,6 @@ export default function MerchantDashboard() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   // Estado para configuração do PagBank
-  const [pagbankConfig, setPagbankConfig] = useState({
-    api_key: "",
-    environment: "SANDBOX" as "SANDBOX" | "PRODUCTION",
-    webhook_url: "",
-    soft_descriptor: "AGRESTE",
-    is_facilitador: false,
-    sub_merchant_tax_id: "",
-    sub_merchant_name: "",
-    sub_merchant_reference_id: "",
-    sub_merchant_mcc: "5691",
-  });
-
-  const [configSaved, setConfigSaved] = useState(false);
-
   // Estado para aparência da loja
   const [storeAppearance, setStoreAppearance] = useState<StoreAppearance>(defaultStoreAppearance);
 
@@ -108,13 +90,10 @@ export default function MerchantDashboard() {
     // Carregar produtos do lojista
     loadProducts();
     
-    // Carregar configuração do PagBank
-    loadPagBankConfig();
-    
     // Carregar aparência da loja
     loadStoreAppearance();
   }, []);
-
+ 
   const loadStoreAppearance = () => {
     const saved = localStorage.getItem(`storeAppearance_${merchantId}`);
     if (saved) {
@@ -133,43 +112,6 @@ export default function MerchantDashboard() {
   const loadProducts = () => {
     const merchantProducts = ProductStorage.getByMerchant(merchantId);
     setProducts(merchantProducts);
-  };
-
-  const loadPagBankConfig = async () => {
-    try {
-      const response = await fetch('/api/pagbank/config');
-      const data = await response.json();
-      if (data.success && data.config) {
-        setPagbankConfig(data.config);
-        setConfigSaved(true);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar configuração:', error);
-    }
-  };
-
-  const handleSavePagBankConfig = async () => {
-    try {
-      const response = await fetch('/api/pagbank/config', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(pagbankConfig),
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setConfigSaved(true);
-        alert('Configuração do PagBank salva com sucesso!');
-      } else {
-        alert('Erro ao salvar configuração: ' + data.error);
-      }
-    } catch (error) {
-      console.error('Erro ao salvar configuração:', error);
-      alert('Erro ao salvar configuração');
-    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -407,10 +349,6 @@ export default function MerchantDashboard() {
             <TabsTrigger value="aparencia">
               <ImageIcon size={16} className="mr-2" />
               Aparência
-            </TabsTrigger>
-            <TabsTrigger value="pagamentos">
-              <CreditCard size={16} className="mr-2" />
-              Pagamentos
             </TabsTrigger>
           </TabsList>
 
@@ -1076,184 +1014,6 @@ export default function MerchantDashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="pagamentos">
-            <Card className="p-6 bg-white">
-              <div className="flex items-center gap-3 mb-6">
-                <Settings size={24} className="text-[#D4704A]" />
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Configuração do PagBank</h2>
-                  <p className="text-sm text-gray-600">Configure sua conta PagBank para receber pagamentos via PIX, Boleto e Cartão</p>
-                </div>
-              </div>
-
-              {configSaved && (
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-green-800 font-medium">✓ Configuração salva com sucesso!</p>
-                </div>
-              )}
-
-              <div className="space-y-6">
-                <div>
-                  <Label htmlFor="api_key" className="text-base font-semibold">
-                    Token de Acesso (API Key) *
-                  </Label>
-                  <p className="text-sm text-gray-600 mb-2">
-                    Obtenha seu token em: <a href="https://minhaconta.pagseguro.uol.com.br/preferencias/integracoes.jhtml" target="_blank" className="text-[#D4704A] underline">PagBank → Integrações</a>
-                  </p>
-                  <Input
-                    id="api_key"
-                    type="password"
-                    value={pagbankConfig.api_key}
-                    onChange={(e) => setPagbankConfig({ ...pagbankConfig, api_key: e.target.value })}
-                    placeholder="Cole aqui seu token de acesso"
-                    className="font-mono"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="environment" className="text-base font-semibold">
-                    Ambiente *
-                  </Label>
-                  <p className="text-sm text-gray-600 mb-2">
-                    Use SANDBOX para testes e PRODUCTION para vendas reais
-                  </p>
-                  <Select
-                    value={pagbankConfig.environment}
-                    onValueChange={(value: "SANDBOX" | "PRODUCTION") => 
-                      setPagbankConfig({ ...pagbankConfig, environment: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="SANDBOX">Sandbox (Testes)</SelectItem>
-                      <SelectItem value="PRODUCTION">Production (Produção)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="webhook_url" className="text-base font-semibold">
-                    URL do Webhook (Opcional)
-                  </Label>
-                  <p className="text-sm text-gray-600 mb-2">
-                    URL para receber notificações de pagamento. Exemplo: https://seusite.com/api/pagbank/webhook
-                  </p>
-                  <Input
-                    id="webhook_url"
-                    value={pagbankConfig.webhook_url}
-                    onChange={(e) => setPagbankConfig({ ...pagbankConfig, webhook_url: e.target.value })}
-                    placeholder="https://seusite.com/api/pagbank/webhook"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="soft_descriptor" className="text-base font-semibold">
-                    Nome na Fatura do Cartão
-                  </Label>
-                  <p className="text-sm text-gray-600 mb-2">
-                    Nome que aparecerá na fatura do cliente (máx. 13 caracteres)
-                  </p>
-                  <Input
-                    id="soft_descriptor"
-                    value={pagbankConfig.soft_descriptor}
-                    onChange={(e) => setPagbankConfig({ ...pagbankConfig, soft_descriptor: e.target.value.slice(0, 13) })}
-                    placeholder="AGRESTE"
-                    maxLength={13}
-                  />
-                </div>
-
-                <div className="border-t pt-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <Label className="text-base font-semibold">Modo Facilitador de Pagamento</Label>
-                      <p className="text-sm text-gray-600">
-                        Ative se você é um marketplace que processa pagamentos para terceiros
-                      </p>
-                    </div>
-                    <Switch
-                      checked={pagbankConfig.is_facilitador}
-                      onCheckedChange={(checked) => 
-                        setPagbankConfig({ ...pagbankConfig, is_facilitador: checked })
-                      }
-                    />
-                  </div>
-
-                  {pagbankConfig.is_facilitador && (
-                    <div className="space-y-4 pl-4 border-l-2 border-[#D4704A]">
-                      <div>
-                        <Label htmlFor="sub_merchant_tax_id">CPF/CNPJ do Sub-Merchant</Label>
-                        <Input
-                          id="sub_merchant_tax_id"
-                          value={pagbankConfig.sub_merchant_tax_id}
-                          onChange={(e) => setPagbankConfig({ ...pagbankConfig, sub_merchant_tax_id: e.target.value })}
-                          placeholder="00000000000"
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="sub_merchant_name">Nome do Sub-Merchant</Label>
-                        <Input
-                          id="sub_merchant_name"
-                          value={pagbankConfig.sub_merchant_name}
-                          onChange={(e) => setPagbankConfig({ ...pagbankConfig, sub_merchant_name: e.target.value })}
-                          placeholder="Nome da Loja"
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="sub_merchant_reference_id">ID de Referência</Label>
-                        <Input
-                          id="sub_merchant_reference_id"
-                          value={pagbankConfig.sub_merchant_reference_id}
-                          onChange={(e) => setPagbankConfig({ ...pagbankConfig, sub_merchant_reference_id: e.target.value })}
-                          placeholder="LOJA001"
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="sub_merchant_mcc">MCC (Código de Categoria)</Label>
-                        <Input
-                          id="sub_merchant_mcc"
-                          value={pagbankConfig.sub_merchant_mcc}
-                          onChange={(e) => setPagbankConfig({ ...pagbankConfig, sub_merchant_mcc: e.target.value })}
-                          placeholder="5691"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    onClick={handleSavePagBankConfig}
-                    className="bg-[#D4704A] hover:bg-[#c05f3d] text-white"
-                    disabled={!pagbankConfig.api_key || !pagbankConfig.environment}
-                  >
-                    <Settings size={18} className="mr-2" />
-                    Salvar Configuração
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    onClick={() => window.open('https://developer.pagbank.com.br/docs/primeiros-passos-pagbank', '_blank')}
-                  >
-                    Ver Documentação
-                  </Button>
-                </div>
-
-                <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="font-semibold text-blue-900 mb-2">Métodos de Pagamento Disponíveis:</h4>
-                  <ul className="space-y-1 text-sm text-blue-800">
-                    <li>✓ <strong>PIX</strong> - Pagamento instantâneo via QR Code</li>
-                    <li>✓ <strong>Boleto</strong> - Boleto bancário com vencimento configurável</li>
-                    <li>✓ <strong>Cartão de Crédito</strong> - Parcelamento em até 12x</li>
-                  </ul>
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
         </Tabs>
       </main>
 
