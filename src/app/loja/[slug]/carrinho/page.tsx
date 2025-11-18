@@ -32,16 +32,50 @@ function PaymentMethods({ slug, total, onPayment }: PaymentMethodsProps) {
 
   useEffect(() => {
     // Carregar métodos de pagamento configurados pelo lojista
-    const merchantConfig = localStorage.getItem(`pagbank_config_${slug}`);
+    // Tentar ambos os formatos (admin e lojista)
+    let merchantConfig = localStorage.getItem(`pagbank_config_${slug}`);
+    if (!merchantConfig) {
+      merchantConfig = localStorage.getItem(`pagbankConfig_${slug}`);
+    }
+    
     if (merchantConfig) {
       try {
         const config = JSON.parse(merchantConfig);
+        console.log("Configuração carregada:", config);
         if (config.enabled_payment_methods) {
-          setAvailableMethods(config.enabled_payment_methods);
+          // Garantir que apenas os métodos habilitados sejam true
+          const methods = {
+            pix: config.enabled_payment_methods.pix === true,
+            boleto: config.enabled_payment_methods.boleto === true,
+            cartao: config.enabled_payment_methods.cartao === true,
+          };
+          console.log("Métodos disponíveis:", methods);
+          setAvailableMethods(methods);
+        } else {
+          // Se não tiver configuração, todos ficam desabilitados
+          console.log("Configuração sem enabled_payment_methods");
+          setAvailableMethods({
+            pix: false,
+            boleto: false,
+            cartao: false,
+          });
         }
       } catch (error) {
         console.error("Erro ao carregar métodos de pagamento:", error);
+        setAvailableMethods({
+          pix: false,
+          boleto: false,
+          cartao: false,
+        });
       }
+    } else {
+      // Se não encontrar configuração, todos ficam desabilitados
+      console.log("Nenhuma configuração encontrada para:", slug);
+      setAvailableMethods({
+        pix: false,
+        boleto: false,
+        cartao: false,
+      });
     }
   }, [slug]);
 
