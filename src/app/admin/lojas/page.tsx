@@ -156,10 +156,17 @@ export default function AdminStoresPage() {
   useEffect(() => {
     setSearchTerm("");
     // Limpar qualquer valor que o navegador possa ter preenchido
-    const input = document.getElementById("store-search-input") as HTMLInputElement;
-    if (input) {
-      input.value = "";
-    }
+    // Usar timeout para garantir que limpa após o navegador tentar preencher
+    const timer = setTimeout(() => {
+      const input = document.getElementById("store-search-input") as HTMLInputElement;
+      if (input) {
+        input.value = "";
+        input.setAttribute("autocomplete", "new-password"); // Truque para desabilitar autocomplete
+        setSearchTerm("");
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const filteredMerchants = useMemo(() => {
@@ -311,13 +318,22 @@ export default function AdminStoresPage() {
             <Input
               placeholder="Buscar loja ou responsável..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                // Prevenir que o navegador preencha automaticamente
+                if (e.target.value === "admin@agresteconectado.com") {
+                  setSearchTerm("");
+                  e.target.value = "";
+                }
+              }}
               className="bg-white pl-10"
-              autoComplete="off"
+              autoComplete="new-password"
               autoFocus={false}
-              type="search"
-              name="store-search"
+              type="text"
+              name={`store-search-${Date.now()}`}
               id="store-search-input"
+              data-lpignore="true"
+              data-form-type="other"
             />
           </div>
           <Select value={statusFilter} onValueChange={(value: MerchantStatus | "todos") => setStatusFilter(value)}>
